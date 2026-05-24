@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Shop from "./Shop";
 import HiddenToken from "./HiddenToken";
 import Events from "./Events";
 import GatenheimPreview from "./gatenheimgame/GatenheimPreview";
 import HiddenArcadeEntrance from "./HiddenArcadeEntrance";
+import BookingModal from "./BookingModal";
 
 export default function HomeContent() {
+  const [bookingOpen, setBookingOpen] = useState(false);
+
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
       behavior: "smooth",
@@ -134,7 +138,7 @@ export default function HomeContent() {
                   </button>
 
                   <button
-                    onClick={() => scrollToSection("cinema")}
+                    onClick={() => setBookingOpen(true)}
                     className="border border-white/10 bg-white/5 px-6 py-3 text-sm uppercase tracking-[0.3em] text-[#e5dccf]/70 transition hover:border-[#ff4d4d]/40 hover:text-[#ff7a7a]"
                   >
                     Book Cinema
@@ -185,8 +189,12 @@ export default function HomeContent() {
       <Shop />
 
       <HiddenToken />
-      
+
       <HiddenArcadeEntrance />
+
+      {bookingOpen && (
+        <BookingModal onClose={() => setBookingOpen(false)} />
+      )}
 
     </main>
   );
