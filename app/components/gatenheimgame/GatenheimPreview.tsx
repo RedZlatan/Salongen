@@ -15,7 +15,7 @@ export default function GatenheimPreview() {
 
     audio.volume = 0.08;
 
-    audio.play();
+    audio.play().catch(() => {});
   };
 
   return (
