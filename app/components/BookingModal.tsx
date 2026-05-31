@@ -18,9 +18,10 @@ type Event = {
 
 type BookingModalProps = {
   onClose: () => void;
+  preselectedTitle?: string;
 };
 
-export default function BookingModal({ onClose }: BookingModalProps) {
+export default function BookingModal({ onClose, preselectedTitle }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +42,23 @@ export default function BookingModal({ onClose }: BookingModalProps) {
         .from("events")
         .select("*")
         .order("date", { ascending: true });
-      if (!error && data) setEvents(data);
+      if (!error && data) {
+        setEvents(data);
+        if (preselectedTitle) {
+          const match = data.find(
+            (e: Event) => e.title.toLowerCase() === preselectedTitle.toLowerCase()
+          );
+          if (match) {
+            setSelectedEvent(match);
+            fetchBookedSeats(match.id);
+            setStep(2);
+          }
+        }
+      }
       setLoading(false);
     }
     fetchEvents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchBookedSeats(eventId: string) {

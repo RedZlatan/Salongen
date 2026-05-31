@@ -7,6 +7,7 @@ type EventCardProps = {
   image: string;
   description: string;
   status?: string;
+  onBook?: () => void;
 };
 
 export default function EventCard({
@@ -16,6 +17,7 @@ export default function EventCard({
   image,
   description,
   status,
+  onBook,
 }: EventCardProps) {
   return (
     <div className="group relative overflow-hidden border border-white/10 bg-[#090909] transition duration-500 hover:-translate-y-1 hover:border-[#ff4d4d]/40 hover:shadow-[0_0_50px_rgba(255,0,0,0.15)]">
@@ -58,7 +60,10 @@ export default function EventCard({
           {description}
         </p>
 
-        <button className="border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]">
+        <button
+          onClick={onBook}
+          className="border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
+        >
           View Event
         </button>
 
