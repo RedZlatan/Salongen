@@ -16,7 +16,7 @@ interface Product {
 const products: Product[] = [
   {
     title: "AROMA Magazine Vol. 1",
-    image: "/shop/aromamagasinvolym1.jpeg",
+    image: "/shop/Aromamagasinvolym1.jpeg",
     desc: "Fragments, interviews and transmissions from below the city.",
     button: "Preorder",
     tag: "Coming Soon",
