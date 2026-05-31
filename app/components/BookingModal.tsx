@@ -7,6 +7,17 @@ import { supabase } from "../../lib/supabase";
 const ROWS = ["A", "B", "C"];
 const COLS = [1, 2, 3, 4];
 
+function formatDate(raw: string) {
+  return new Date(raw).toLocaleString("sv-SE", {
+    timeZone: "Europe/Stockholm",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export type BookingEvent = {
   id: string;
   title: string;
@@ -216,7 +227,7 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
                         }`}
                       >
                         <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.3em] text-[#ff5a5a]">
-                          {event.date}
+                          {formatDate(event.date)}
                         </div>
                         <div className="text-lg font-black uppercase">
                           {event.title}
@@ -246,7 +257,7 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
               >
                 <div className="mb-5 border border-white/10 bg-black/40 p-4">
                   <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#ff5a5a]">
-                    {selectedEvent.date}
+                    {formatDate(selectedEvent.date)}
                   </div>
                   <div className="mt-1 text-xl font-black uppercase">
                     {selectedEvent.title}
