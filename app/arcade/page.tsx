@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ForestGame from "../components/forest-game/ForestGame";
 
 type Scene =
   | "entrance"
   | "aroma"
   | "confession"
-  | "observer";
+  | "observer"
+  | "lockeleftfromaroma";
 
 export default function ArcadePage() {
   const [scene, setScene] =
@@ -25,6 +27,9 @@ export default function ArcadePage() {
     useState(false);
 
   const [cameraActive, setCameraActive] =
+    useState(false);
+
+  const [forestOpen, setForestOpen] =
     useState(false);
 
   useEffect(() => {
@@ -55,6 +60,9 @@ export default function ArcadePage() {
     switch (scene) {
       case "aroma":
         return "/arcade/aromaclose.jpeg";
+
+      case "lockeleftfromaroma":
+        return "/arcade/lockeleftfromaroma.jpeg";
 
       case "confession":
         return "/arcade/blank-confession.jpeg";
@@ -290,11 +298,116 @@ export default function ArcadePage() {
             "
           />
 
+          {/* TURN LEFT */}
+          <button
+            onClick={() =>
+              setScene("lockeleftfromaroma")
+            }
+            className="
+              absolute
+              bottom-10
+              left-8
+              z-30
+              flex
+              items-center
+              gap-2
+              border
+              border-white/20
+              bg-black/40
+              px-5
+              py-3
+              font-mono
+              text-xs
+              uppercase
+              tracking-[0.35em]
+              text-white/60
+              backdrop-blur-sm
+              transition
+              hover:border-[#4aff8c]/30
+              hover:text-white
+            "
+          >
+            ← Turn Left
+          </button>
+
           {/* RETURN */}
           <button
             onClick={() =>
               setScene("entrance")
             }
+            className="
+              absolute
+              bottom-10
+              left-1/2
+              z-30
+              -translate-x-1/2
+              border
+              border-white/20
+              bg-black/40
+              px-6
+              py-3
+              font-mono
+              text-xs
+              uppercase
+              tracking-[0.35em]
+              text-white/70
+              backdrop-blur-sm
+              transition
+              hover:border-[#ff4d4d]/40
+              hover:text-white
+            "
+          >
+            Return
+          </button>
+
+        </>
+      )}
+
+      {/* LOCKE LEFT FROM AROMA */}
+      {scene === "lockeleftfromaroma" && (
+        <>
+
+          {/* FOREST MACHINE HOTSPOT */}
+          <button
+            onClick={() => setForestOpen(true)}
+            className="
+              absolute
+              left-1/2
+              top-1/2
+              z-20
+              h-[480px]
+              w-[320px]
+              -translate-x-1/2
+              -translate-y-1/2
+              cursor-pointer
+              group
+            "
+            aria-label="Forest of the Broken Brains"
+          >
+            <span
+              className="
+                absolute
+                bottom-[-2.5rem]
+                left-1/2
+                -translate-x-1/2
+                whitespace-nowrap
+                font-mono
+                text-[10px]
+                uppercase
+                tracking-[0.35em]
+                text-[#4aff8c]/0
+                transition-all
+                duration-300
+                group-hover:text-[#4aff8c]/70
+              "
+            >
+              Forest of the Broken Brains
+            </span>
+          </button>
+
+          {/* RETURN */}
+          <button
+            onClick={() => setScene("aroma")}
             className="
               absolute
               bottom-10
@@ -575,6 +688,11 @@ export default function ArcadePage() {
           </button>
 
         </>
+      )}
+
+      {/* FOREST GAME */}
+      {forestOpen && (
+        <ForestGame onClose={() => setForestOpen(false)} />
       )}
 
       {/* TOKEN */}
