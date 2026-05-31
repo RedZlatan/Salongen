@@ -5,9 +5,79 @@ import type { AnimationGroup } from "@babylonjs/core";
 
 type Props = { onClose: () => void };
 
+// ── Foreground tree silhouettes ───────────────────────────────────────────────
+// Pre-computed at module level (never re-run on render).
+
+const SVG_H = 500; // SVG canvas height in px
+const GND   = 490; // tree root y within the SVG
+
+function pine(cx: number, h: number, w: number): string {
+  const b = GND;
+  return [
+    `M${cx},${b}`,
+    `L${r(cx - w * .50)},${r(b - h * .35)}`,
+    `L${r(cx - w * .30)},${r(b - h * .35)}`,
+    `L${r(cx - w * .38)},${r(b - h * .65)}`,
+    `L${r(cx - w * .18)},${r(b - h * .65)}`,
+    `L${cx},${r(b - h)}`,
+    `L${r(cx + w * .18)},${r(b - h * .65)}`,
+    `L${r(cx + w * .38)},${r(b - h * .65)}`,
+    `L${r(cx + w * .30)},${r(b - h * .35)}`,
+    `L${r(cx + w * .50)},${r(b - h * .35)}`,
+    "Z",
+  ].join(" ");
+}
+
+function bare(cx: number, h: number, w: number): string {
+  const b = GND;
+  const s = w / 2;
+  return [
+    `M${cx - 5},${b}`,
+    `L${cx - 5},${r(b - h * .55)}`,
+    `L${r(cx - s - 5)},${r(b - h * .88)}`,
+    `L${r(cx - s + 8)},${r(b - h * .88)}`,
+    `L${cx - 5},${r(b - h * .63)}`,
+    `L${cx},${r(b - h)}`,
+    `L${cx + 5},${r(b - h * .63)}`,
+    `L${r(cx + s - 8)},${r(b - h * .88)}`,
+    `L${r(cx + s + 5)},${r(b - h * .88)}`,
+    `L${cx + 5},${r(b - h * .55)}`,
+    `L${cx + 5},${b}`,
+    "Z",
+  ].join(" ");
+}
+
+function r(n: number) { return Math.round(n); }
+
+const TREES: Array<{ f: "pine" | "bare"; cx: number; h: number; w: number }> = [
+  { f: "pine", cx:  150, h: 290, w: 150 }, { f: "bare", cx:  350, h: 240, w:  85 },
+  { f: "pine", cx:  560, h: 340, w: 180 }, { f: "bare", cx:  760, h: 210, w:  75 },
+  { f: "pine", cx:  960, h: 275, w: 145 }, { f: "bare", cx: 1150, h: 250, w:  88 },
+  { f: "pine", cx: 1330, h: 315, w: 165 }, { f: "bare", cx: 1530, h: 230, w:  80 },
+  { f: "pine", cx: 1720, h: 365, w: 190 }, { f: "bare", cx: 1940, h: 260, w:  92 },
+  { f: "pine", cx: 2130, h: 295, w: 155 }, { f: "bare", cx: 2320, h: 245, w:  86 },
+  { f: "pine", cx: 2510, h: 325, w: 170 }, { f: "bare", cx: 2710, h: 220, w:  78 },
+  { f: "pine", cx: 2900, h: 285, w: 148 }, { f: "bare", cx: 3080, h: 255, w:  90 },
+  { f: "pine", cx: 3270, h: 355, w: 185 }, { f: "bare", cx: 3480, h: 240, w:  83 },
+  { f: "pine", cx: 3660, h: 300, w: 158 }, { f: "bare", cx: 3860, h: 265, w:  93 },
+  { f: "pine", cx: 4050, h: 340, w: 175 }, { f: "bare", cx: 4250, h: 235, w:  82 },
+  { f: "pine", cx: 4430, h: 280, w: 147 }, { f: "bare", cx: 4630, h: 250, w:  88 },
+  { f: "pine", cx: 4820, h: 320, w: 167 }, { f: "bare", cx: 5020, h: 228, w:  78 },
+  { f: "pine", cx: 5200, h: 310, w: 162 }, { f: "bare", cx: 5400, h: 260, w:  90 },
+  { f: "pine", cx: 5590, h: 345, w: 180 }, { f: "bare", cx: 5800, h: 238, w:  82 },
+  { f: "pine", cx: 5960, h: 285, w: 150 },
+];
+
+const treePaths = TREES.map((t) =>
+  t.f === "pine" ? pine(t.cx, t.h, t.w) : bare(t.cx, t.h, t.w)
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function ForestGame({ onClose }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bgRef     = useRef<HTMLDivElement>(null);
+  const fgRef     = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
@@ -28,17 +98,16 @@ export default function ForestGame({ onClose }: Props) {
         cleanups.push(() => engine.dispose());
 
         const scene = new BABYLON.Scene(engine);
-        // Transparent so CSS background image shows through
-        scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+        scene.clearColor = new BABYLON.Color4(0, 0, 0, 0); // transparent → CSS bg shows
         scene.fogMode    = BABYLON.Scene.FOGMODE_EXP2;
         scene.fogDensity = 0.022;
         scene.fogColor   = new BABYLON.Color3(0.02, 0.04, 0.02);
 
         // ── Lighting ──────────────────────────────────────────────────────
         const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
-        hemi.intensity    = 0.45;
-        hemi.diffuse      = new BABYLON.Color3(0.55, 0.75, 0.5);
-        hemi.groundColor  = new BABYLON.Color3(0.06, 0.08, 0.05);
+        hemi.intensity   = 0.45;
+        hemi.diffuse     = new BABYLON.Color3(0.55, 0.75, 0.5);
+        hemi.groundColor = new BABYLON.Color3(0.06, 0.08, 0.05);
 
         const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-0.4, -1, 0.6), scene);
         sun.intensity = 0.8;
@@ -46,40 +115,32 @@ export default function ForestGame({ onClose }: Props) {
 
         // ── Ground ────────────────────────────────────────────────────────
         const ground = BABYLON.MeshBuilder.CreateGround(
-          "ground",
-          { width: 400, height: 20, subdivisions: 1 },
-          scene
+          "ground", { width: 400, height: 20, subdivisions: 1 }, scene
         );
         const gMat = new BABYLON.StandardMaterial("gMat", scene);
         gMat.diffuseColor  = new BABYLON.Color3(0.08, 0.06, 0.02);
         gMat.specularColor = BABYLON.Color3.Black();
         ground.material    = gMat;
 
-        // ── 2.5D side camera ─────────────────────────────────────────────
+        // ── 2.5D camera ───────────────────────────────────────────────────
         const camera = new BABYLON.FreeCamera("cam", new BABYLON.Vector3(0, 2.5, -9), scene);
         camera.setTarget(new BABYLON.Vector3(0, 1.2, 0));
         camera.inputs.clear();
-
         const camTarget = new BABYLON.Vector3(0, 1.2, 0);
 
         // ── Load character ────────────────────────────────────────────────
         const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync(
-          "",
-          "/forest-game/",
-          "animations.glb",
-          scene
+          "", "/forest-game/", "animations.glb", scene
         );
         if (disposed) return;
 
         const charRoot = meshes[0];
 
-        // ── Scale ─────────────────────────────────────────────────────────
+        // ── Scale to ~2 units tall ────────────────────────────────────────
         charRoot.computeWorldMatrix(true);
-        const b0 = charRoot.getHierarchyBoundingVectors(true);
+        const b0     = charRoot.getHierarchyBoundingVectors(true);
         const modelH = b0.max.y - b0.min.y;
-        if (modelH > 0.01 && (modelH < 0.8 || modelH > 5)) {
-          charRoot.scaling.setAll(2.0 / modelH);
-        }
+        if (modelH > 0.01 && (modelH < 0.8 || modelH > 5)) charRoot.scaling.setAll(2.0 / modelH);
         charRoot.computeWorldMatrix(true);
         const b1 = charRoot.getHierarchyBoundingVectors(true);
         charRoot.position.y = b1.min.y < 0 ? -b1.min.y : 0;
@@ -93,7 +154,7 @@ export default function ForestGame({ onClose }: Props) {
         for (const group of scene.animationGroups) {
           for (const ta of group.targetedAnimations) {
             if (ta.animation.targetProperty !== "position") continue;
-            const keys = ta.animation.getKeys();
+            const keys  = ta.animation.getKeys();
             const hasXZ = keys.some(
               (k) => k.value != null &&
                 (Math.abs(k.value.x ?? 0) > 0.001 || Math.abs(k.value.z ?? 0) > 0.001)
@@ -116,6 +177,7 @@ export default function ForestGame({ onClose }: Props) {
 
         const idleGroup = pick("idle", "stand", "rest", "a-pose", "t-pose", "bind");
         const walkGroup = pick("walk", "run", "jog", "move", "locomotion") ?? groups[0];
+        const jumpGroup = pick("jump", "leap", "hop");
 
         const playLoop = (g: AnimationGroup | undefined) =>
           g?.start(true, 1.0, g.from, g.to, false);
@@ -123,14 +185,15 @@ export default function ForestGame({ onClose }: Props) {
         if (idleGroup) playLoop(idleGroup);
         setStatus("ready");
 
-        // ── Keyboard — X-axis only ────────────────────────────────────────
+        // ── Keyboard ──────────────────────────────────────────────────────
         const held: Record<string, boolean> = {};
-        const MOVE = new Set(["ArrowLeft", "ArrowRight", "KeyA", "KeyD", "Space"]);
-        const onKeyDown = (e: KeyboardEvent) => {
-          held[e.code] = true;
-          if (MOVE.has(e.code)) e.preventDefault();
-        };
-        const onKeyUp = (e: KeyboardEvent) => { held[e.code] = false; };
+        const MOVE = new Set([
+          "ArrowLeft", "ArrowRight", "KeyA", "KeyD",
+          "ArrowUp", "ArrowDown", "KeyW", "KeyS",
+          "Space",
+        ]);
+        const onKeyDown = (e: KeyboardEvent) => { held[e.code] = true;  if (MOVE.has(e.code)) e.preventDefault(); };
+        const onKeyUp   = (e: KeyboardEvent) => { held[e.code] = false; };
         document.addEventListener("keydown", onKeyDown);
         document.addEventListener("keyup",   onKeyUp);
         cleanups.push(
@@ -138,41 +201,42 @@ export default function ForestGame({ onClose }: Props) {
           () => document.removeEventListener("keyup",   onKeyUp)
         );
 
-        // ── Game loop ─────────────────────────────────────────────────────
-        const SPEED   = 0.055;
-        const GRAVITY = 0.012;
-        const JUMP_V  = 0.22;
-        const GROUND_Y = pivot.position.y;
-
-        const jumpGroup = pick("jump", "leap", "hop");
+        // ── Game loop constants ───────────────────────────────────────────
+        const SPEED    = 0.055;
+        const SPEED_Z  = 0.04;
+        const Z_LIMIT  = 2;      // ±2 units → 3 visible depth zones
+        const GRAVITY  = 0.012;
+        const JUMP_V   = 0.22;
+        const FLOOR_Y  = pivot.position.y;
 
         let walking = false;
         let jumping = false;
         let velY    = 0;
 
         scene.registerBeforeRender(() => {
-          const goLeft  = held["ArrowLeft"]  || held["KeyA"];
-          const goRight = held["ArrowRight"] || held["KeyD"];
-          const moving  = goLeft || goRight;
+          const goLeft    = held["ArrowLeft"]  || held["KeyA"];
+          const goRight   = held["ArrowRight"] || held["KeyD"];
+          const goFwd     = held["ArrowUp"]    || held["KeyW"]; // into screen
+          const goBack    = held["ArrowDown"]  || held["KeyS"]; // toward camera
+          const moving    = goLeft || goRight || goFwd || goBack;
           const jumpPress = held["Space"];
 
-          // ── Jump ──────────────────────────────────────────────────────
+          // ── Jump ────────────────────────────────────────────────────────
           if (jumpPress && !jumping) {
             jumping = true;
-            velY = JUMP_V;
-            walkGroup?.stop();
-            idleGroup?.stop();
+            velY    = JUMP_V;
+            walkGroup?.stop(); idleGroup?.stop();
             if (jumpGroup) playLoop(jumpGroup); else playLoop(walkGroup);
             held["Space"] = false;
           }
 
-          // ── Gravity & landing ─────────────────────────────────────────
+          // ── Gravity & landing ────────────────────────────────────────────
           if (jumping) {
             velY -= GRAVITY;
             pivot.position.y += velY;
-            if (pivot.position.y <= GROUND_Y) {
-              pivot.position.y = GROUND_Y;
-              velY = 0;
+            if (pivot.position.y <= FLOOR_Y) {
+              pivot.position.y = FLOOR_Y;
+              velY    = 0;
               jumping = false;
               jumpGroup?.stop();
               if (moving) playLoop(walkGroup);
@@ -180,37 +244,39 @@ export default function ForestGame({ onClose }: Props) {
             }
           }
 
-          // ── Walk / idle ────────────────────────────────────────────────
+          // ── Walk / idle ──────────────────────────────────────────────────
           if (!jumping) {
-            if (moving && !walking) {
-              walking = true;
-              idleGroup?.stop();
-              playLoop(walkGroup);
-            } else if (!moving && walking) {
-              walking = false;
-              walkGroup?.stop();
-              if (idleGroup) playLoop(idleGroup);
-            }
+            if (moving && !walking)      { walking = true;  idleGroup?.stop(); playLoop(walkGroup); }
+            else if (!moving && walking) { walking = false; walkGroup?.stop(); if (idleGroup) playLoop(idleGroup); }
           }
           walking = moving && !jumping;
 
-          // ── X-only movement ────────────────────────────────────────────
+          // ── Movement ─────────────────────────────────────────────────────
           const dx = (goRight ? 1 : 0) - (goLeft ? 1 : 0);
+          const dz = (goFwd   ? 1 : 0) - (goBack ? 1 : 0);
+
           if (moving) {
             pivot.position.x += dx * SPEED;
-            pivot.rotation.y  = dx > 0 ? Math.PI : 0;
+            pivot.position.z  = Math.max(-Z_LIMIT, Math.min(Z_LIMIT, pivot.position.z + dz * SPEED_Z));
+            if (goLeft || goRight) pivot.rotation.y = Math.atan2(dx, 0);
           }
 
-          // ── Camera follows X ───────────────────────────────────────────
+          // ── Depth scale: 0.85 (back) → 1.15 (front) ─────────────────────
+          pivot.scaling.setAll(1.0 - (pivot.position.z / Z_LIMIT) * 0.15);
+
+          // ── Camera tracks X ───────────────────────────────────────────────
           camera.position.x = pivot.position.x;
           camTarget.x       = pivot.position.x;
           camera.setTarget(camTarget);
 
-          // ── Parallax background ────────────────────────────────────────
-          if (bgRef.current) {
-            const offset = pivot.position.x * -15;
-            bgRef.current.style.backgroundPosition = `calc(50% + ${offset}px) 50%`;
-          }
+          // ── Parallax ─────────────────────────────────────────────────────
+          const bgOffset = pivot.position.x * -15;
+          const fgOffset = bgOffset * 1.8;
+
+          if (bgRef.current)
+            bgRef.current.style.backgroundPosition = `calc(50% + ${bgOffset}px) 50%`;
+          if (fgRef.current)
+            fgRef.current.style.transform = `translateX(calc(-50% + ${fgOffset}px))`;
         });
 
         engine.runRenderLoop(() => { if (!disposed) scene.render(); });
@@ -218,6 +284,7 @@ export default function ForestGame({ onClose }: Props) {
         const onResize = () => engine.resize();
         window.addEventListener("resize", onResize);
         cleanups.push(() => window.removeEventListener("resize", onResize));
+
       } catch (err) {
         console.error("[ForestGame]", err);
         if (!disposed) setStatus("error");
@@ -254,7 +321,7 @@ export default function ForestGame({ onClose }: Props) {
       {/* Scene */}
       <div className="relative flex-1 overflow-hidden">
 
-        {/* Parallax background */}
+        {/* 1. Parallax background image */}
         <div
           ref={bgRef}
           className="absolute inset-0"
@@ -266,18 +333,40 @@ export default function ForestGame({ onClose }: Props) {
           }}
         />
 
-        {/* Horizon fog overlay */}
+        {/* 2. Horizon fog overlay */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
-            background:
-              "linear-gradient(to bottom, transparent 35%, rgba(4,8,3,0.25) 58%, rgba(4,8,3,0.55) 100%)",
+            background: "linear-gradient(to bottom, transparent 35%, rgba(4,8,3,0.25) 58%, rgba(4,8,3,0.55) 100%)",
           }}
         />
 
-        {/* Babylon canvas — transparent bg */}
+        {/* 3. Babylon canvas — transparent so background shows through */}
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
+        {/* 4. Ground fog — thick gradient at the bottom */}
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 right-0"
+          style={{
+            height: "32%",
+            background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.70))",
+          }}
+        />
+
+        {/* 5. Foreground tree silhouettes — scrolls 1.8× faster than background */}
+        <div
+          ref={fgRef}
+          className="pointer-events-none absolute bottom-0"
+          style={{ left: "50%", transform: "translateX(-50%)", width: "6000px" }}
+        >
+          <svg viewBox={`0 0 6000 ${SVG_H}`} width="6000" height={SVG_H} style={{ display: "block" }}>
+            {treePaths.map((d, i) => (
+              <path key={i} d={d} fill="#020502" />
+            ))}
+          </svg>
+        </div>
+
+        {/* Status overlays */}
         {status === "loading" && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/70">
             <p className="animate-pulse font-mono text-sm uppercase tracking-[0.35em] text-[#4aff8c]/70">
@@ -296,7 +385,7 @@ export default function ForestGame({ onClose }: Props) {
 
         {status === "ready" && (
           <p className="absolute bottom-4 left-1/2 -translate-x-1/2 select-none font-mono text-[10px] uppercase tracking-[0.3em] text-white/25">
-            ← A &nbsp;&nbsp; D → &nbsp;&nbsp; Space ↑
+            ← A &nbsp; D → &nbsp;&nbsp; W / S &nbsp;&nbsp; Space ↑
           </p>
         )}
       </div>
