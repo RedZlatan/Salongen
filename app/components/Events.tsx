@@ -4,14 +4,13 @@ import EventCard from "./EventCard";
 
 const events = [
   {
-    slug: "last-screening",
-    title: "The Last Screening",
-    type: "Film Screening",
-    date: "Friday 23:30",
-    image: "/events/lastscreening.jpeg",
-    description:
-      "Film, wine and conversation beneath projector light.",
-    status: "4 Seats Left",
+    slug: "intresserad-ungdom",
+    title: "Intresserad Ungdom",
+    type: "Live Music",
+    date: "Fredag 12 September 20:00",
+    image: "/events/intresserad-ungdom.jpg",
+    description: "En kväll med Intresserad Ungdom under projektorljuset.",
+    status: "Biljetter 200 kr",
   },
   {
     slug: "midnight-jazz",
