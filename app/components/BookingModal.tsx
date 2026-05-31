@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabase";
 
-const SWISH_NUMBER = "123 456 78 90";
 const ROWS = ["A", "B", "C"];
 const COLS = [1, 2, 3, 4];
 
@@ -76,17 +75,20 @@ export default function BookingModal({ onClose }: BookingModalProps) {
     setSubmitting(true);
     setError("");
 
-    const ref = `SAL-${Date.now().toString(36).toUpperCase()}`;
+    const ref   = `SAL-${Date.now().toString(36).toUpperCase()}`;
+    const total = selectedEvent.price * selectedSeats.length;
 
+    // 1. Save booking as pending
     const { error: insertError } = await supabase.from("bookings").insert({
-      event_id: selectedEvent.id,
+      event_id:     selectedEvent.id,
       name,
       email,
       phone,
-      seats: selectedSeats.length,
+      seats:        selectedSeats.length,
       seat_numbers: selectedSeats.join(","),
-      booking_ref: ref,
-      total: selectedEvent.price * selectedSeats.length,
+      booking_ref:  ref,
+      total,
+      status:       "pending",
     });
 
     if (insertError) {
@@ -96,8 +98,36 @@ export default function BookingModal({ onClose }: BookingModalProps) {
     }
 
     setBookingRef(ref);
-    setStep(3);
-    setSubmitting(false);
+
+    // 2. Create Stripe Checkout session
+    const res = await fetch("/api/checkout", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: [{
+          name:     selectedEvent.title,
+          price:    total * 100, // kr → öre
+          quantity: 1,
+        }],
+        metadata: {
+          booking_ref: ref,
+          event_id:    selectedEvent.id,
+          seats:       selectedSeats.join(","),
+          email,
+        },
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!data.url) {
+      setError("Betalningen kunde inte startas. Försök igen.");
+      setSubmitting(false);
+      return;
+    }
+
+    // 3. Redirect to Stripe Checkout
+    window.location.href = data.url;
   }
 
   const totalAmount = selectedEvent ? selectedEvent.price * selectedSeats.length : 0;
@@ -125,7 +155,7 @@ export default function BookingModal({ onClose }: BookingModalProps) {
               Book Cinema
             </div>
             <div className="mt-1 font-mono text-[10px] text-[#e5dccf]/30">
-              Step {step} of {step === 4 ? 4 : 3}
+              Step {step} of 2
             </div>
           </div>
           <button
@@ -350,7 +380,7 @@ export default function BookingModal({ onClose }: BookingModalProps) {
                       className="border border-[#ff4d4d]/40 bg-[#ff2b2b]/10 px-6 py-3 font-mono text-xs uppercase tracking-[0.3em] text-[#ffb0b0] shadow-[0_0_20px_rgba(255,0,0,0.25)] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_50px_rgba(255,0,0,0.5)] disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       {submitting
-                        ? "Processing..."
+                        ? "Redirecting to payment..."
                         : selectedSeats.length === 0
                         ? "Select seats"
                         : `Pay ${totalAmount} kr (${selectedSeats.length} seat${selectedSeats.length > 1 ? "s" : ""}) →`}
@@ -360,105 +390,6 @@ export default function BookingModal({ onClose }: BookingModalProps) {
               </motion.div>
             )}
 
-            {/* STEP 3 — Swish */}
-            {step === 3 && selectedEvent && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="text-center"
-              >
-                <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.35em] text-[#ff5a5a]">
-                  Payment
-                </div>
-                <h2 className="mb-8 text-2xl font-black uppercase">
-                  Pay via Swish
-                </h2>
-
-                <div className="mx-auto mb-6 max-w-sm border border-white/10 bg-black/60 p-8">
-                  <div className="mb-6 font-mono text-[10px] uppercase tracking-[0.3em] text-[#e5dccf]/40">
-                    Swish Number
-                  </div>
-                  <div className="mb-6 text-4xl font-black tracking-wider text-[#ffb3b3] drop-shadow-[0_0_15px_rgba(255,100,100,0.5)]">
-                    {SWISH_NUMBER}
-                  </div>
-                  <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-[#e5dccf]/40">
-                    Amount
-                  </div>
-                  <div className="mb-6 text-3xl font-black text-[#e5dccf]">
-                    {totalAmount} kr
-                  </div>
-                  <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.3em] text-[#e5dccf]/40">
-                    Seats
-                  </div>
-                  <div className="mb-4 font-mono text-sm text-[#e5dccf]/70">
-                    {selectedSeats.join(", ")}
-                  </div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#e5dccf]/40">
-                    Message
-                  </div>
-                  <div className="mt-1 font-mono text-sm text-[#e5dccf]/80">
-                    {bookingRef}
-                  </div>
-                </div>
-
-                <p className="mb-8 font-mono text-xs text-[#e5dccf]/50">
-                  Use your booking reference as message in Swish.
-                  <br />
-                  Confirmation will be sent to {email}.
-                </p>
-
-                <button
-                  onClick={() => setStep(4)}
-                  className="border border-[#ff4d4d]/40 bg-[#ff2b2b]/10 px-8 py-3 font-mono text-xs uppercase tracking-[0.3em] text-[#ffb0b0] shadow-[0_0_20px_rgba(255,0,0,0.25)] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_50px_rgba(255,0,0,0.5)]"
-                >
-                  I have paid →
-                </button>
-              </motion.div>
-            )}
-
-            {/* STEP 4 — Confirmation */}
-            {step === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="py-4 text-center"
-              >
-                <div className="mb-4 font-mono text-[10px] uppercase tracking-[0.35em] text-[#ff5a5a]">
-                  Confirmed
-                </div>
-                <h2 className="mb-6 text-3xl font-black uppercase">
-                  See You There
-                </h2>
-
-                <div className="mx-auto mb-6 max-w-xs border border-[#ff4d4d]/20 bg-[#ff2b2b]/5 p-6">
-                  <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-[#e5dccf]/40">
-                    Booking Reference
-                  </div>
-                  <div className="font-mono text-xl tracking-widest text-[#ffb3b3]">
-                    {bookingRef}
-                  </div>
-                </div>
-
-                <div className="mb-8 space-y-1 font-mono text-xs text-[#e5dccf]/50">
-                  <div>{selectedEvent?.title}</div>
-                  <div>{selectedEvent?.date}</div>
-                  <div>{selectedSeats.join(", ")}</div>
-                  <div>{selectedSeats.length} seat{selectedSeats.length > 1 ? "s" : ""} · {totalAmount} kr</div>
-                  <div className="pt-1">{email}</div>
-                </div>
-
-                <button
-                  onClick={onClose}
-                  className="border border-white/10 bg-white/5 px-8 py-3 font-mono text-xs uppercase tracking-[0.3em] text-[#e5dccf]/60 transition hover:border-[#ff4d4d]/30 hover:text-[#ff7a7a]"
-                >
-                  Close
-                </button>
-              </motion.div>
-            )}
           </AnimatePresence>
         </div>
       </motion.div>

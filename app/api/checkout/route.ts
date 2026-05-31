@@ -6,10 +6,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export interface CartItem {
-  printfulVariantId: number;
+  printfulVariantId?: number;
   quantity: number;
   name: string;
-  price: number; // in öre/cents
+  price: number; // in öre
 }
 
 export interface ShippingAddress {
@@ -22,10 +22,37 @@ export interface ShippingAddress {
 }
 
 export async function POST(req: NextRequest) {
-  const { items, shippingAddress }: { items: CartItem[]; shippingAddress: ShippingAddress } =
-    await req.json();
+  const {
+    items,
+    shippingAddress,
+    metadata: extraMetadata,
+  }: {
+    items: CartItem[];
+    shippingAddress?: ShippingAddress;
+    metadata?: Record<string, string>;
+  } = await req.json();
 
   const baseUrl = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
+
+  // Build session metadata: start with any caller-supplied key/values,
+  // then layer on Printful fields when a shipping address is present.
+  const sessionMetadata: Record<string, string> = { ...(extraMetadata ?? {}) };
+
+  if (shippingAddress) {
+    const printfulItems = items
+      .filter((i) => i.printfulVariantId)
+      .map((i) => ({ variant_id: i.printfulVariantId, quantity: i.quantity, name: i.name }));
+
+    Object.assign(sessionMetadata, {
+      printfulItems: JSON.stringify(printfulItems),
+      recipientName:     shippingAddress.name,
+      recipientAddress1: shippingAddress.address1,
+      recipientCity:     shippingAddress.city,
+      recipientZip:      shippingAddress.zip,
+      recipientCountry:  shippingAddress.country,
+      recipientEmail:    shippingAddress.email,
+    });
+  }
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -38,23 +65,9 @@ export async function POST(req: NextRequest) {
       },
       quantity: item.quantity,
     })),
-    metadata: {
-      printfulItems: JSON.stringify(
-        items.map((i) => ({
-          variant_id: i.printfulVariantId,
-          quantity: i.quantity,
-          name: i.name,
-        }))
-      ),
-      recipientName: shippingAddress.name,
-      recipientAddress1: shippingAddress.address1,
-      recipientCity: shippingAddress.city,
-      recipientZip: shippingAddress.zip,
-      recipientCountry: shippingAddress.country,
-      recipientEmail: shippingAddress.email,
-    },
-    success_url: `${baseUrl}/?checkout=success`,
-    cancel_url: `${baseUrl}/?checkout=cancelled`,
+    metadata: sessionMetadata,
+    success_url: `${baseUrl}/?booking=success`,
+    cancel_url:  `${baseUrl}/?booking=cancelled`,
   });
 
   return NextResponse.json({ url: session.url });
