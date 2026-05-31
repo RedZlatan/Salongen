@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabase";
 const ROWS = ["A", "B", "C"];
 const COLS = [1, 2, 3, 4];
 
-type Event = {
+export type BookingEvent = {
   id: string;
   title: string;
   date: string;
@@ -18,14 +18,14 @@ type Event = {
 
 type BookingModalProps = {
   onClose: () => void;
-  preselectedTitle?: string;
+  preselectedEvent?: BookingEvent;
 };
 
-export default function BookingModal({ onClose, preselectedTitle }: BookingModalProps) {
-  const [step, setStep] = useState(1);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+export default function BookingModal({ onClose, preselectedEvent }: BookingModalProps) {
+  const [step, setStep] = useState(preselectedEvent ? 2 : 1);
+  const [events, setEvents] = useState<BookingEvent[]>([]);
+  const [loading, setLoading] = useState(!preselectedEvent);
+  const [selectedEvent, setSelectedEvent] = useState<BookingEvent | null>(preselectedEvent ?? null);
   const [bookedSeats, setBookedSeats] = useState<string[]>([]);
   const [seatsLoading, setSeatsLoading] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -37,27 +37,20 @@ export default function BookingModal({ onClose, preselectedTitle }: BookingModal
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchEvents() {
-      const { data, error } = await supabase
+    if (preselectedEvent) {
+      // Skip fetching the full event list — jump straight to seat selection
+      fetchBookedSeats(preselectedEvent.id);
+      return;
+    }
+    async function loadEvents() {
+      const { data } = await supabase
         .from("events")
         .select("*")
         .order("date", { ascending: true });
-      if (!error && data) {
-        setEvents(data);
-        if (preselectedTitle) {
-          const match = data.find(
-            (e: Event) => e.title.toLowerCase() === preselectedTitle.toLowerCase()
-          );
-          if (match) {
-            setSelectedEvent(match);
-            fetchBookedSeats(match.id);
-            setStep(2);
-          }
-        }
-      }
+      if (data) setEvents(data);
       setLoading(false);
     }
-    fetchEvents();
+    loadEvents();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -382,12 +375,15 @@ export default function BookingModal({ onClose, preselectedTitle }: BookingModal
                   )}
 
                   <div className="flex items-center justify-between pt-2">
-                    <button
-                      onClick={() => setStep(1)}
-                      className="font-mono text-xs uppercase tracking-[0.2em] text-[#e5dccf]/40 transition hover:text-[#e5dccf]"
-                    >
-                      ← Back
-                    </button>
+                    {!preselectedEvent && (
+                      <button
+                        onClick={() => setStep(1)}
+                        className="font-mono text-xs uppercase tracking-[0.2em] text-[#e5dccf]/40 transition hover:text-[#e5dccf]"
+                      >
+                        ← Back
+                      </button>
+                    )}
+                    <div />
                     <button
                       onClick={handleBooking}
                       disabled={!name || !email || !phone || selectedSeats.length === 0 || submitting}

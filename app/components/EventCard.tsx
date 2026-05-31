@@ -7,6 +7,7 @@ type EventCardProps = {
   image: string;
   description: string;
   status?: string;
+  onViewEvent?: () => void;
   onBook?: () => void;
 };
 
@@ -17,20 +18,19 @@ export default function EventCard({
   image,
   description,
   status,
+  onViewEvent,
   onBook,
 }: EventCardProps) {
   return (
     <div className="group relative overflow-hidden border border-white/10 bg-[#090909] transition duration-500 hover:-translate-y-1 hover:border-[#ff4d4d]/40 hover:shadow-[0_0_50px_rgba(255,0,0,0.15)]">
-      
+
       {/* IMAGE */}
       <div className="relative aspect-[16/10] overflow-hidden">
-
         <img
           src={image}
           alt={title}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105 group-hover:opacity-80"
         />
-
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
         <div className="absolute top-4 left-4 border border-[#ff4d4d]/20 bg-black/60 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.3em] text-[#ff6b6b] backdrop-blur-sm">
@@ -42,12 +42,10 @@ export default function EventCard({
             {status}
           </div>
         )}
-
       </div>
 
       {/* CONTENT */}
       <div className="p-6">
-
         <div className="mb-4 font-mono text-xs uppercase tracking-[0.3em] text-[#ff5a5a]">
           {date}
         </div>
@@ -60,13 +58,21 @@ export default function EventCard({
           {description}
         </p>
 
-        <button
-          onClick={onBook}
-          className="border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
-        >
-          View Event
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onViewEvent}
+            className="border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
+          >
+            View Event
+          </button>
 
+          <button
+            onClick={onBook}
+            className="border border-white/15 bg-white/5 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#e5dccf]/60 transition duration-300 hover:border-[#ff4d4d]/30 hover:text-[#ffb3b3]"
+          >
+            Book Now
+          </button>
+        </div>
       </div>
 
     </div>
