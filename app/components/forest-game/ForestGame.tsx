@@ -75,9 +75,11 @@ const treePaths = TREES.map((t) =>
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ForestGame({ onClose }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const bgRef     = useRef<HTMLDivElement>(null);
-  const fgRef     = useRef<HTMLDivElement>(null);
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const bgRef      = useRef<HTMLDivElement>(null);
+  const fgRef      = useRef<HTMLDivElement>(null);
+  const musicRef   = useRef<HTMLAudioElement | null>(null);
+  const howlTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
@@ -185,6 +187,28 @@ export default function ForestGame({ onClose }: Props) {
         if (idleGroup) playLoop(idleGroup);
         setStatus("ready");
 
+        // ── Soundtrack ────────────────────────────────────────────────────
+        const music = new Audio("/forest-game/560444__migfus20__mysterious-background-music-orchestra.mp3");
+        music.loop   = true;
+        music.volume = 0.4;
+        musicRef.current = music;
+        music.play().catch(() => {});
+        cleanups.push(() => { music.pause(); music.src = ""; });
+
+        // ── Wolf howl — random interval 15–45 s ───────────────────────────
+        const scheduleHowl = () => {
+          const delay = 15000 + Math.random() * 30000;
+          howlTimer.current = setTimeout(() => {
+            if (disposed) return;
+            const howl = new Audio("/forest-game/810171__mokasza__lone-wolf-howling.mp3");
+            howl.volume = 0.6;
+            howl.play().catch(() => {});
+            scheduleHowl();
+          }, delay);
+        };
+        scheduleHowl();
+        cleanups.push(() => { if (howlTimer.current) clearTimeout(howlTimer.current); });
+
         // ── Keyboard ──────────────────────────────────────────────────────
         const held: Record<string, boolean> = {};
         const MOVE = new Set([
@@ -273,8 +297,11 @@ export default function ForestGame({ onClose }: Props) {
           const bgOffset = pivot.position.x * -15;
           const fgOffset = bgOffset * 1.8;
 
+          // Subtle Y-shift on background when moving in Z (perspective illusion)
+          const bgY = 50 + (pivot.position.z / Z_LIMIT) * 4; // ±4% vertical shift
+
           if (bgRef.current)
-            bgRef.current.style.backgroundPosition = `calc(50% + ${bgOffset}px) 50%`;
+            bgRef.current.style.backgroundPosition = `calc(50% + ${bgOffset}px) ${bgY}%`;
           if (fgRef.current)
             fgRef.current.style.transform = `translateX(calc(-50% + ${fgOffset}px))`;
         });
