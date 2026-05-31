@@ -13,14 +13,13 @@ const events = [
     status: "Biljetter 200 kr",
   },
   {
-    slug: "midnight-jazz",
-    title: "Midnight Jazz Session",
-    type: "Live Music",
-    date: "Saturday 01:10",
-    image: "/events/jazzsession.jpeg",
-    description:
-      "Late night improvisation for temporary guests.",
-    status: "Almost Sold Out",
+    slug: "secret-midnight",
+    title: "Secret Midnight Session",
+    type: "Secret Event",
+    date: "Fredag 13 Juni 00:00",
+    image: "/events/secret-midnight.jpg",
+    description: "An undisclosed artist. An undisclosed location. 40 seats only.",
+    status: "Biljetter 399 kr",
   },
 ];
 
