@@ -42,7 +42,6 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
   const [error, setError] = useState("");
@@ -103,7 +102,6 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
       event_id:     selectedEvent.id,
       name,
       email,
-      phone,
       seats:        selectedSeats.length,
       seat_numbers: selectedSeats.join(","),
       booking_ref:  ref,
@@ -112,7 +110,8 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
     });
 
     if (insertError) {
-      setError("Något gick fel. Försök igen.");
+      console.error("[BookingModal] Supabase insert failed:", insertError);
+      setError(`Något gick fel: ${insertError.message}`);
       setSubmitting(false);
       return;
     }
@@ -367,20 +366,6 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
                     />
                   </div>
 
-                  {/* Phone */}
-                  <div>
-                    <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.3em] text-[#e5dccf]/60">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full border border-white/10 bg-black/60 px-4 py-3 font-mono text-sm text-[#e5dccf] outline-none transition focus:border-[#ff4d4d]/40 focus:shadow-[0_0_20px_rgba(255,0,0,0.1)] placeholder:text-[#e5dccf]/20"
-                      placeholder="+46 70 000 00 00"
-                    />
-                  </div>
-
                   {error && (
                     <div className="font-mono text-xs text-[#ff5a5a]">
                       {error}
@@ -399,7 +384,7 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
                     <div />
                     <button
                       onClick={handleBooking}
-                      disabled={!name || !email || !phone || selectedSeats.length === 0 || submitting}
+                      disabled={!name || !email || selectedSeats.length === 0 || submitting}
                       className="border border-[#ff4d4d]/40 bg-[#ff2b2b]/10 px-6 py-3 font-mono text-xs uppercase tracking-[0.3em] text-[#ffb0b0] shadow-[0_0_20px_rgba(255,0,0,0.25)] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_50px_rgba(255,0,0,0.5)] disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       {submitting
