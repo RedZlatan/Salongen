@@ -22,10 +22,10 @@ type BookingModalProps = {
 };
 
 export default function BookingModal({ onClose, preselectedEvent }: BookingModalProps) {
-  const [step, setStep] = useState(preselectedEvent ? 2 : 1);
+  const [step, setStep] = useState(1);
   const [events, setEvents] = useState<BookingEvent[]>([]);
-  const [loading, setLoading] = useState(!preselectedEvent);
-  const [selectedEvent, setSelectedEvent] = useState<BookingEvent | null>(preselectedEvent ?? null);
+  const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState<BookingEvent | null>(null);
   const [bookedSeats, setBookedSeats] = useState<string[]>([]);
   const [seatsLoading, setSeatsLoading] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -38,7 +38,9 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
 
   useEffect(() => {
     if (preselectedEvent) {
-      // Skip fetching the full event list — jump straight to seat selection
+      setSelectedEvent(preselectedEvent);
+      setStep(2);
+      setLoading(false);
       fetchBookedSeats(preselectedEvent.id);
       return;
     }
