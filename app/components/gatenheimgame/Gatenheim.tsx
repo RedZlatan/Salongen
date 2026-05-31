@@ -116,6 +116,14 @@ export default function Gatenheim() {
       {/* DARK OVERLAY */}
       <div className="absolute inset-0 bg-black/25" />
 
+      {/* BACK TO HOME */}
+      <a
+        href="/"
+        className="absolute left-6 top-6 z-50 border border-white/20 bg-black/40 px-6 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm transition hover:border-[#ff4d4d]/40 hover:text-white"
+      >
+        ← Back
+      </a>
+
       {/* LIGHT FLICKER */}
       {scene === "door" && (
         <div
