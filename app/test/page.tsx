@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import Intro from "./components/Intro";
-import HomeContent from "./components/HomeContent";
+import Intro from "../components/Intro";
+import HomeContent from "../components/HomeContent";
 
 export default function HomePage() {
   const [showIntro, setShowIntro] = useState(false);

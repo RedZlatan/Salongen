@@ -14,7 +14,7 @@ export default function AromaGame() {
 
       boss!: Phaser.Physics.Arcade.Sprite | null;
 
-      ground!: Phaser.Physics.Arcade.StaticImage;
+      ground!: Phaser.Physics.Arcade.Image;
 
       cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 
@@ -237,9 +237,9 @@ export default function AromaGame() {
 
         // Controls
         this.cursors =
-          this.input.keyboard.createCursorKeys();
+          this.input.keyboard!.createCursorKeys();
 
-        this.spaceKey = this.input.keyboard.addKey(
+        this.spaceKey = this.input.keyboard!.addKey(
           Phaser.Input.Keyboard.KeyCodes.SPACE
         );
 
@@ -378,9 +378,9 @@ export default function AromaGame() {
         );
 
         // ambience lower
-        this.citySound.setVolume(0.03);
+        (this.citySound as Phaser.Sound.WebAudioSound).setVolume(0.03);
 
-        this.neonSound.setVolume(0.01);
+        (this.neonSound as Phaser.Sound.WebAudioSound).setVolume(0.01);
 
         // boss sound immediately
         this.sound.play("bossSound", {
@@ -740,7 +740,7 @@ export default function AromaGame() {
         default: "arcade",
 
         arcade: {
-          gravity: { y: 1000 },
+          gravity: { x: 0, y: 1000 },
 
           debug: false,
         },
