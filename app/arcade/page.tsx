@@ -209,16 +209,16 @@ export default function ArcadePage() {
           />
 
           {/* Mobile: visible navigation buttons */}
-          <div className="absolute bottom-10 left-1/2 z-30 flex -translate-x-1/2 flex-col gap-3 md:hidden">
+          <div className="absolute bottom-24 left-1/2 z-30 flex -translate-x-1/2 flex-col gap-3 md:hidden">
             <button
               onClick={() => setScene("aroma")}
-              className="border border-white/20 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm"
+              className="border border-[#ff4d4d]/40 bg-black/70 px-8 py-5 font-mono text-sm uppercase tracking-[0.35em] text-[#ffb3b3] backdrop-blur-sm"
             >
-              Enter Aroma →
+              → Enter Aroma
             </button>
             <button
               onClick={() => setScene("confession")}
-              className="border border-white/20 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm"
+              className="border border-white/20 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-white/60 backdrop-blur-sm"
             >
               Confession Booth →
             </button>
@@ -261,95 +261,46 @@ export default function ArcadePage() {
       {scene === "aroma" && (
         <>
 
-          {/* BEGIN */}
+          {/* BEGIN — desktop invisible hotspot only */}
           <button
             onClick={startAroma}
-            className="
-              absolute
-              left-1/2
-              top-[72%]
-              z-20
-              h-20
-              w-40
-              -translate-x-1/2
-              cursor-pointer
-            "
+            className="absolute left-1/2 top-[72%] z-20 h-20 w-40 -translate-x-1/2 cursor-pointer hidden md:block"
           />
 
-          {/* OBSERVER HOTSPOT */}
+          {/* OBSERVER HOTSPOT — desktop only */}
           <button
-            onClick={() =>
-              setScene("observer")
-            }
-            className="
-              absolute
-              right-[12%]
-              top-[22%]
-              z-20
-              h-[360px]
-              w-[180px]
-              cursor-pointer
-            "
+            onClick={() => setScene("observer")}
+            className="absolute right-[12%] top-[22%] z-20 h-[360px] w-[180px] cursor-pointer hidden md:block"
           />
+
+          {/* Mobile: Enter Aroma + Observer buttons */}
+          <div className="absolute bottom-24 left-1/2 z-30 flex -translate-x-1/2 flex-col gap-3 md:hidden">
+            <button
+              onClick={startAroma}
+              className="border border-[#ff4d4d]/40 bg-black/70 px-8 py-5 font-mono text-sm uppercase tracking-[0.35em] text-[#ffb3b3] backdrop-blur-sm"
+            >
+              → Enter Aroma
+            </button>
+            <button
+              onClick={() => setScene("observer")}
+              className="border border-white/20 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-white/60 backdrop-blur-sm"
+            >
+              Observer →
+            </button>
+          </div>
 
           {/* TURN LEFT */}
           <button
-            onClick={() =>
-              setScene("lockeleftfromaroma")
-            }
-            className="
-              absolute
-              bottom-10
-              left-8
-              z-30
-              flex
-              items-center
-              gap-2
-              border
-              border-white/20
-              bg-black/40
-              px-5
-              py-3
-              font-mono
-              text-xs
-              uppercase
-              tracking-[0.35em]
-              text-white/60
-              backdrop-blur-sm
-              transition
-              hover:border-[#4aff8c]/30
-              hover:text-white
-            "
+            onClick={() => setScene("lockeleftfromaroma")}
+            className="absolute bottom-10 left-8 z-30 flex items-center gap-2 border border-white/20 bg-black/40 px-5 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/60 backdrop-blur-sm transition hover:border-[#4aff8c]/30 hover:text-white"
           >
             ← Turn Left
           </button>
 
           {/* RETURN */}
           <button
-            onClick={() =>
-              setScene("entrance")
-            }
-            className="
-              absolute
-              bottom-10
-              left-1/2
-              z-30
-              -translate-x-1/2
-              border
-              border-white/20
-              bg-black/40
-              px-6
-              py-3
-              font-mono
-              text-xs
-              uppercase
-              tracking-[0.35em]
-              text-white/70
-              backdrop-blur-sm
-              transition
-              hover:border-[#ff4d4d]/40
-              hover:text-white
-            "
+            onClick={() => setScene("entrance")}
+            className="absolute bottom-10 left-1/2 z-30 -translate-x-1/2 border border-white/20 bg-black/40 px-6 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm transition hover:border-[#ff4d4d]/40 hover:text-white"
           >
             Return
           </button>
