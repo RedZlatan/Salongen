@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import ProductDetailModal, { type ProductDetail, type ProductSize } from "./ProductDetailModal";
 
 interface SizeVariant {
   label: string;
   printfulVariantId: number;
   price: number; // öre
+  image?: string;
 }
 
 interface Product {
   title: string;
   image: string;
+  images: string[]; // gallery
   desc: string;
   tag: string;
   soldOut?: boolean;
@@ -25,6 +28,10 @@ const products: Product[] = [
   {
     title: "SALONGEN Cap",
     image: "https://files.cdn.printful.com/files/136/136fc76f208ceff0994c2c1bc75c33fa_preview.png",
+    images: [
+      "https://files.cdn.printful.com/files/136/136fc76f208ceff0994c2c1bc75c33fa_preview.png",
+      "https://files.cdn.printful.com/files/9bf/9bf1099eeb4046b4dfd890f9f684a3ed_preview.png",
+    ],
     desc: "Worn by projectionists and temporary guests.",
     tag: "In Stock",
     printfulVariantId: 5332359042,
@@ -33,20 +40,24 @@ const products: Product[] = [
   {
     title: "Sticker Pack",
     image: "https://files.cdn.printful.com/files/1b7/1b72bcf1afda0fd0dc5e09c0ff6daa5a_preview.png",
+    images: [
+      "https://files.cdn.printful.com/files/1b7/1b72bcf1afda0fd0dc5e09c0ff6daa5a_preview.png",
+    ],
     desc: "For laptops, tunnels and questionable decisions.",
     tag: "In Stock",
     printfulVariantId: 5332854195,
     price: 3500,
     sizes: [
-      { label: '3×3"',     printfulVariantId: 5332854195, price: 3500 },
-      { label: '4×4"',     printfulVariantId: 5332854196, price: 3500 },
-      { label: '5.5×5.5"', printfulVariantId: 5332854197, price: 4100 },
+      { label: '3×3"',     printfulVariantId: 5332854195, price: 3500, image: "https://files.cdn.printful.com/files/1b7/1b72bcf1afda0fd0dc5e09c0ff6daa5a_preview.png" },
+      { label: '4×4"',     printfulVariantId: 5332854196, price: 3500, image: "https://files.cdn.printful.com/files/59f/59fa1f19e4538f6cd661e640f4322500_preview.png" },
+      { label: '5.5×5.5"', printfulVariantId: 5332854197, price: 4100, image: "https://files.cdn.printful.com/files/99e/99ea61fa95f6bce7ade9c714bc7e2ef5_preview.png" },
     ],
   },
   // ── Coming soon ────────────────────────────────────────────────────────────
   {
     title: "AROMA Magazine Vol. 1",
     image: "/shop/Aromamagasinvolym1.jpeg",
+    images: ["/shop/Aromamagasinvolym1.jpeg"],
     desc: "Fragments, interviews and transmissions from below the city.",
     tag: "Coming Soon",
     notifyOnly: true,
@@ -56,6 +67,7 @@ const products: Product[] = [
   {
     title: "Den Sista Salongen T-Shirt",
     image: "/shop/densistasalongentshirt.jpeg",
+    images: ["/shop/densistasalongentshirt.jpeg"],
     desc: "Heavy black cotton. Small batch print.",
     tag: "Limited Release",
     notifyOnly: true,
@@ -65,6 +77,7 @@ const products: Product[] = [
   {
     title: "After Hours Hoodie",
     image: "/shop/salongenhodie.jpeg",
+    images: ["/shop/salongenhodie.jpeg"],
     desc: "Built for screenings extending beyond midnight.",
     tag: "Unavailable",
     soldOut: true,
@@ -91,6 +104,7 @@ export default function Shop() {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, SizeVariant>>(defaultSizes);
   const [notifyEmails, setNotifyEmails]   = useState<Record<string, string>>({});
   const [notifyStatus, setNotifyStatus]   = useState<Record<string, "idle" | "loading" | "done">>({});
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
 
   const totalItems = cart.reduce((sum, ci) => sum + ci.quantity, 0);
 
@@ -190,10 +204,13 @@ export default function Shop() {
                 key={item.title}
                 className="group relative overflow-hidden border border-white/10 bg-[#090909] transition duration-500 hover:-translate-y-1 hover:border-[#ff4d4d]/40 hover:shadow-[0_0_60px_rgba(255,0,0,0.15)]"
               >
-                {/* image */}
-                <div className="relative aspect-[4/5] overflow-hidden bg-black">
+                {/* image — click to open detail modal */}
+                <div
+                  className="relative aspect-[4/5] cursor-pointer overflow-hidden bg-black"
+                  onClick={() => setDetailProduct(item)}
+                >
                   <img
-                    src={item.image}
+                    src={selectedSizes[item.title]?.image ?? item.image}
                     alt={item.title}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105 group-hover:opacity-80"
                   />
@@ -298,6 +315,37 @@ export default function Shop() {
           })}
         </div>
       </section>
+
+      {/* Product detail modal */}
+      {detailProduct && (
+        <ProductDetailModal
+          product={{
+            title:      detailProduct.title,
+            desc:       detailProduct.desc,
+            tag:        detailProduct.tag,
+            images:     detailProduct.images,
+            price:      detailProduct.price,
+            sizes:      detailProduct.sizes as ProductSize[] | undefined,
+            soldOut:    detailProduct.soldOut,
+            notifyOnly: detailProduct.notifyOnly,
+          }}
+          initialSize={detailProduct.sizes ? selectedSizes[detailProduct.title] as ProductSize : undefined}
+          onAddToCart={(variantId, price, sizeLabel) => {
+            const effective: Product = {
+              ...detailProduct,
+              title: sizeLabel ? `${detailProduct.title} (${sizeLabel})` : detailProduct.title,
+              printfulVariantId: variantId,
+              price,
+            };
+            setCart((prev) => {
+              const existing = prev.find((ci) => ci.product.printfulVariantId === variantId);
+              if (existing) return prev.map((ci) => ci.product.printfulVariantId === variantId ? { ...ci, quantity: ci.quantity + 1 } : ci);
+              return [...prev, { product: effective, quantity: 1 }];
+            });
+          }}
+          onClose={() => setDetailProduct(null)}
+        />
+      )}
 
       {/* Sticky cart bar */}
       {totalItems > 0 && (
