@@ -45,40 +45,45 @@ export async function POST(req: NextRequest) {
 
   const hasPhysicalItems = printfulItems.length > 0;
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-    line_items: items.map((item) => ({
-      price_data: {
-        currency: "sek",
-        product_data: { name: item.name },
-        unit_amount: item.price,
-      },
-      quantity: item.quantity,
-    })),
-    // Collect shipping address + show shipping rate for physical Printful orders
-    ...(hasPhysicalItems && {
-      shipping_address_collection: {
-        allowed_countries: ["SE", "NO", "DK", "FI", "DE", "GB"],
-      },
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: { amount: 4900, currency: "sek" },
-            display_name: "Standard frakt",
-            delivery_estimate: {
-              minimum: { unit: "business_day", value: 5 },
-              maximum: { unit: "business_day", value: 10 },
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: items.map((item) => ({
+        price_data: {
+          currency: "sek",
+          product_data: { name: item.name },
+          unit_amount: item.price,
+        },
+        quantity: item.quantity,
+      })),
+      ...(hasPhysicalItems && {
+        shipping_address_collection: {
+          allowed_countries: ["SE", "NO", "DK", "FI", "DE", "GB"],
+        },
+        shipping_options: [
+          {
+            shipping_rate_data: {
+              type: "fixed_amount",
+              fixed_amount: { amount: 4900, currency: "sek" },
+              display_name: "Standard frakt",
+              delivery_estimate: {
+                minimum: { unit: "business_day", value: 5 },
+                maximum: { unit: "business_day", value: 10 },
+              },
             },
           },
-        },
-      ],
-    }),
-    metadata: sessionMetadata,
-    success_url: `${process.env.NEXT_PUBLIC_URL}/?booking=success`,
-    cancel_url:  `${process.env.NEXT_PUBLIC_URL}/?booking=cancelled`,
-  });
+        ],
+      }),
+      metadata: sessionMetadata,
+      success_url: `${process.env.NEXT_PUBLIC_URL}/?booking=success`,
+      cancel_url:  `${process.env.NEXT_PUBLIC_URL}/?booking=cancelled`,
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown Stripe error";
+    console.error("[checkout] Stripe session creation failed:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

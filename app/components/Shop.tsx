@@ -78,7 +78,6 @@ interface CartItem {
   quantity: number;
 }
 
-// Initialise selected size to first variant for each product that has sizes
 const defaultSizes: Record<string, SizeVariant> = Object.fromEntries(
   products
     .filter((p) => p.sizes?.length)
@@ -86,18 +85,16 @@ const defaultSizes: Record<string, SizeVariant> = Object.fromEntries(
 );
 
 export default function Shop() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [cart, setCart]           = useState<CartItem[]>([]);
+  const [loading, setLoading]     = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<Record<string, SizeVariant>>(defaultSizes);
-
-  // Per-product notify-me state
   const [notifyEmails, setNotifyEmails]   = useState<Record<string, string>>({});
   const [notifyStatus, setNotifyStatus]   = useState<Record<string, "idle" | "loading" | "done">>({});
 
   const totalItems = cart.reduce((sum, ci) => sum + ci.quantity, 0);
 
   function addToCart(product: Product) {
-    // For size-variants, use the currently selected size
     const size = product.sizes ? selectedSizes[product.title] : undefined;
     const effective: Product = size
       ? { ...product, title: `${product.title} (${size.label})`, printfulVariantId: size.printfulVariantId, price: size.price }
@@ -131,25 +128,32 @@ export default function Shop() {
   async function handleCheckout() {
     if (cart.length === 0 || loading) return;
     setLoading(true);
+    setCheckoutError("");
 
     const items = cart.map((ci) => ({
       printfulVariantId: ci.product.printfulVariantId,
-      quantity: ci.quantity,
-      name: ci.product.title,
-      price: ci.product.price,
+      quantity:          ci.quantity,
+      name:              ci.product.title,
+      price:             ci.product.price,
     }));
 
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items }),
-    });
-
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      console.error("Checkout error:", data);
+    try {
+      const res  = await fetch("/api/checkout", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ items }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("[checkout] no url in response:", data);
+        setCheckoutError(data.error ?? "Något gick fel — försök igen.");
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("[checkout] fetch failed:", err);
+      setCheckoutError("Kunde inte ansluta till betalningsservern.");
       setLoading(false);
     }
   }
@@ -177,7 +181,9 @@ export default function Shop() {
 
         <div className="relative z-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {products.map((item) => {
-            const status = notifyStatus[item.title] ?? "idle";
+            const notifyState   = notifyStatus[item.title] ?? "idle";
+            const selectedSize  = item.sizes ? selectedSizes[item.title] : undefined;
+            const displayPrice  = Math.round((selectedSize?.price ?? item.price) / 100);
 
             return (
               <div
@@ -208,15 +214,18 @@ export default function Shop() {
 
                 {/* content */}
                 <div className="p-5">
-                  <h3 className="mb-3 text-2xl font-black uppercase leading-none">{item.title}</h3>
-                  <p className="mb-6 text-sm leading-relaxed text-[#e5dccf]/55">{item.desc}</p>
+                  <h3 className="mb-2 text-2xl font-black uppercase leading-none">{item.title}</h3>
+
+                  {/* Price */}
+                  <p className="mb-3 font-mono text-sm text-[#ffb3b3]">
+                    {displayPrice} kr
+                  </p>
+
+                  <p className="mb-5 text-sm leading-relaxed text-[#e5dccf]/55">{item.desc}</p>
 
                   {/* ── Sold out ── */}
                   {item.soldOut && (
-                    <button
-                      disabled
-                      className="cursor-not-allowed border border-white/10 bg-white/5 px-5 py-3 text-xs uppercase tracking-[0.3em] text-white/30"
-                    >
+                    <button disabled className="cursor-not-allowed border border-white/10 bg-white/5 px-5 py-3 text-xs uppercase tracking-[0.3em] text-white/30">
                       Sold Out
                     </button>
                   )}
@@ -226,33 +235,24 @@ export default function Shop() {
                     <div className="space-y-3">
                       {/* Size picker */}
                       {item.sizes && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[#e5dccf]/35 shrink-0">
-                            Size
-                          </span>
-                          <div className="flex gap-1.5">
-                            {item.sizes.map((size) => {
-                              const isSelected = selectedSizes[item.title]?.printfulVariantId === size.printfulVariantId;
-                              return (
-                                <button
-                                  key={size.printfulVariantId}
-                                  onClick={() => setSelectedSizes((prev) => ({ ...prev, [item.title]: size }))}
-                                  className={`px-2.5 py-1 font-mono text-[10px] border transition duration-200 ${
-                                    isSelected
-                                      ? "border-[#ff4d4d]/60 bg-[#ff2b2b]/15 text-[#ffb3b3]"
-                                      : "border-white/10 bg-black/40 text-[#e5dccf]/40 hover:border-[#ff4d4d]/30 hover:text-[#e5dccf]/70"
-                                  }`}
-                                >
-                                  {size.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {item.sizes && (
-                            <span className="ml-auto font-mono text-[10px] text-[#ffb3b3]/70">
-                              {((selectedSizes[item.title]?.price ?? item.price) / 100)} kr
-                            </span>
-                          )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[#e5dccf]/35">Size</span>
+                          {item.sizes.map((size) => {
+                            const isSelected = selectedSizes[item.title]?.printfulVariantId === size.printfulVariantId;
+                            return (
+                              <button
+                                key={size.printfulVariantId}
+                                onClick={() => setSelectedSizes((prev) => ({ ...prev, [item.title]: size }))}
+                                className={`px-2.5 py-1 font-mono text-[10px] border transition duration-200 ${
+                                  isSelected
+                                    ? "border-[#ff4d4d]/60 bg-[#ff2b2b]/15 text-[#ffb3b3]"
+                                    : "border-white/10 bg-black/40 text-[#e5dccf]/40 hover:border-[#ff4d4d]/30 hover:text-[#e5dccf]/70"
+                                }`}
+                              >
+                                {size.label}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
 
@@ -266,9 +266,9 @@ export default function Shop() {
                     </div>
                   )}
 
-                  {/* ── Notify Me (no real Printful ID yet) ── */}
+                  {/* ── Notify Me ── */}
                   {!item.soldOut && item.notifyOnly && (
-                    status === "done" ? (
+                    notifyState === "done" ? (
                       <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#4aff8c]/70">
                         You&apos;re on the list.
                       </p>
@@ -278,18 +278,16 @@ export default function Shop() {
                           type="email"
                           placeholder="your@email.com"
                           value={notifyEmails[item.title] ?? ""}
-                          onChange={(e) =>
-                            setNotifyEmails((prev) => ({ ...prev, [item.title]: e.target.value }))
-                          }
+                          onChange={(e) => setNotifyEmails((prev) => ({ ...prev, [item.title]: e.target.value }))}
                           onKeyDown={(e) => e.key === "Enter" && handleNotify(item)}
                           className="min-w-0 flex-1 border border-white/10 bg-black/60 px-3 py-2 font-mono text-xs text-[#e5dccf] outline-none transition placeholder:text-white/20 focus:border-[#ff4d4d]/40"
                         />
                         <button
                           onClick={() => handleNotify(item)}
-                          disabled={status === "loading" || !notifyEmails[item.title]?.trim()}
+                          disabled={notifyState === "loading" || !notifyEmails[item.title]?.trim()}
                           className="shrink-0 border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-[#ffb3b3] transition hover:bg-[#ff2b2b]/20 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          {status === "loading" ? "…" : "Notify Me"}
+                          {notifyState === "loading" ? "…" : "Notify Me"}
                         </button>
                       </div>
                     )
@@ -304,30 +302,35 @@ export default function Shop() {
       {/* Sticky cart bar */}
       {totalItems > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#ff4d4d]/30 bg-black/90 backdrop-blur-md">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 md:px-10">
-            <div className="flex items-center gap-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ff2b2b] font-mono text-xs font-bold text-white">
-                {totalItems}
-              </span>
-              <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#e5dccf]/70">
-                {totalItems === 1 ? "1 item" : `${totalItems} items`} in cart
-              </span>
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-4 md:px-10">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ff2b2b] font-mono text-xs font-bold text-white">
+                  {totalItems}
+                </span>
+                <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#e5dccf]/70">
+                  {totalItems === 1 ? "1 item" : `${totalItems} items`} in cart
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setCart([])}
+                  className="font-mono text-xs uppercase tracking-[0.2em] text-white/30 transition hover:text-white/60"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={handleCheckout}
+                  disabled={loading}
+                  className="relative overflow-hidden border border-[#ff4d4d]/50 bg-[#ff2b2b]/15 px-6 py-3 font-mono text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/25 hover:shadow-[0_0_30px_rgba(255,0,0,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? "Redirecting…" : "Checkout →"}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setCart([])}
-                className="font-mono text-xs uppercase tracking-[0.2em] text-white/30 transition hover:text-white/60"
-              >
-                Clear
-              </button>
-              <button
-                onClick={handleCheckout}
-                disabled={loading}
-                className="relative overflow-hidden border border-[#ff4d4d]/50 bg-[#ff2b2b]/15 px-6 py-3 font-mono text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/25 hover:shadow-[0_0_30px_rgba(255,0,0,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? "Redirecting…" : "Checkout →"}
-              </button>
-            </div>
+            {checkoutError && (
+              <p className="font-mono text-[10px] text-[#ff5a5a]">{checkoutError}</p>
+            )}
           </div>
         </div>
       )}
