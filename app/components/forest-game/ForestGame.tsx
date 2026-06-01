@@ -413,12 +413,12 @@ export default function ForestGame({ onClose }: Props) {
         {status === "ready" && (
           <>
             {/* Keyboard hint — desktop only */}
-            <p className="absolute bottom-4 left-1/2 hidden -translate-x-1/2 select-none font-mono text-[10px] uppercase tracking-[0.3em] text-white/25 sm:block">
+            <p className="absolute bottom-4 left-1/2 hidden -translate-x-1/2 select-none font-mono text-[10px] uppercase tracking-[0.3em] text-white/25 md:block">
               ← A &nbsp; D → &nbsp;&nbsp; W / S &nbsp;&nbsp; Space ↑
             </p>
 
-            {/* Touch D-pad — mobile only */}
-            <div className="pointer-events-none absolute bottom-4 left-0 right-0 flex items-end justify-between px-4 sm:hidden">
+            {/* Touch D-pad — mobile only (hidden on md+) */}
+            <div className="pointer-events-none absolute bottom-4 left-0 right-0 flex items-end justify-between px-4 md:hidden">
               {/* Left cluster: directional */}
               <div className="pointer-events-auto grid grid-cols-3 gap-1" style={{ gridTemplateAreas: `". up ." "left . right" ". down ."` }}>
                 {([

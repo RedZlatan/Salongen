@@ -100,12 +100,12 @@ export default function HomeContent() {
             <div className="relative inline-block">
 
               <div className="absolute inset-0 blur-3xl opacity-70">
-                <h1 className="font-black uppercase leading-none tracking-[-0.06em] text-[#ff2f2f] text-[5rem] md:text-[10rem] lg:text-[13rem]">
+                <h1 className="font-black uppercase leading-none tracking-[-0.06em] text-[#ff2f2f] text-[clamp(2.2rem,11vw,5rem)] md:text-[10rem] lg:text-[13rem]">
                   SALONGEN
                 </h1>
               </div>
 
-              <h1 className="relative animate-pulse font-black uppercase leading-none tracking-[-0.06em] text-[#ffb3b3] drop-shadow-[0_0_25px_rgba(255,0,0,0.95)] text-[5rem] md:text-[10rem] lg:text-[13rem]">
+              <h1 className="relative animate-pulse font-black uppercase leading-none tracking-[-0.06em] text-[#ffb3b3] drop-shadow-[0_0_25px_rgba(255,0,0,0.95)] text-[clamp(2.2rem,11vw,5rem)] md:text-[10rem] lg:text-[13rem]">
                 SALONGEN
               </h1>
 

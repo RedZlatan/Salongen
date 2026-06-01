@@ -196,39 +196,33 @@ export default function ArcadePage() {
       {scene === "entrance" && (
         <>
 
-          {/* AROMA */}
+          {/* AROMA — desktop invisible hotspot */}
           <button
-            onClick={() =>
-              setScene("aroma")
-            }
-            className="
-              absolute
-              left-1/2
-              top-1/2
-              z-20
-              h-[500px]
-              w-[500px]
-              -translate-x-1/2
-              -translate-y-1/2
-              cursor-pointer
-            "
+            onClick={() => setScene("aroma")}
+            className="absolute left-1/2 top-1/2 z-20 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 cursor-pointer hidden md:block"
           />
 
-          {/* CONFESSION */}
+          {/* CONFESSION — desktop invisible hotspot */}
           <button
-            onClick={() =>
-              setScene("confession")
-            }
-            className="
-              absolute
-              right-[7%]
-              top-[14%]
-              z-20
-              h-[620px]
-              w-[240px]
-              cursor-pointer
-            "
+            onClick={() => setScene("confession")}
+            className="absolute right-[7%] top-[14%] z-20 h-[620px] w-[240px] cursor-pointer hidden md:block"
           />
+
+          {/* Mobile: visible navigation buttons */}
+          <div className="absolute bottom-10 left-1/2 z-30 flex -translate-x-1/2 flex-col gap-3 md:hidden">
+            <button
+              onClick={() => setScene("aroma")}
+              className="border border-white/20 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm"
+            >
+              Enter Aroma →
+            </button>
+            <button
+              onClick={() => setScene("confession")}
+              className="border border-white/20 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm"
+            >
+              Confession Booth →
+            </button>
+          </div>
 
           {/* LEAVE */}
           <button
@@ -367,68 +361,29 @@ export default function ArcadePage() {
       {scene === "lockeleftfromaroma" && (
         <>
 
-          {/* FOREST MACHINE HOTSPOT */}
+          {/* FOREST MACHINE HOTSPOT — desktop invisible clickzone */}
           <button
             onClick={() => setForestOpen(true)}
-            className="
-              absolute
-              left-1/2
-              top-1/2
-              z-20
-              h-[480px]
-              w-[320px]
-              -translate-x-1/2
-              -translate-y-1/2
-              cursor-pointer
-              group
-            "
+            className="absolute left-1/2 top-1/2 z-20 h-[480px] w-[320px] -translate-x-1/2 -translate-y-1/2 cursor-pointer group hidden md:block"
             aria-label="Forest of the Broken Brains"
           >
-            <span
-              className="
-                absolute
-                bottom-[-2.5rem]
-                left-1/2
-                -translate-x-1/2
-                whitespace-nowrap
-                font-mono
-                text-[10px]
-                uppercase
-                tracking-[0.35em]
-                text-[#4aff8c]/0
-                transition-all
-                duration-300
-                group-hover:text-[#4aff8c]/70
-              "
-            >
+            <span className="absolute bottom-[-2.5rem] left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.35em] text-[#4aff8c]/0 transition-all duration-300 group-hover:text-[#4aff8c]/70">
               Forest of the Broken Brains
             </span>
+          </button>
+
+          {/* FOREST — mobile visible button */}
+          <button
+            onClick={() => setForestOpen(true)}
+            className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 md:hidden border border-[#4aff8c]/30 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-[#4aff8c]/80 backdrop-blur-sm"
+          >
+            Forest of the Broken Brains →
           </button>
 
           {/* RETURN */}
           <button
             onClick={() => setScene("aroma")}
-            className="
-              absolute
-              bottom-10
-              left-1/2
-              z-30
-              -translate-x-1/2
-              border
-              border-white/20
-              bg-black/40
-              px-6
-              py-3
-              font-mono
-              text-xs
-              uppercase
-              tracking-[0.35em]
-              text-white/70
-              backdrop-blur-sm
-              transition
-              hover:border-[#ff4d4d]/40
-              hover:text-white
-            "
+            className="absolute bottom-10 left-1/2 z-30 -translate-x-1/2 border border-white/20 bg-black/40 px-6 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm transition hover:border-[#ff4d4d]/40 hover:text-white"
           >
             Return
           </button>
