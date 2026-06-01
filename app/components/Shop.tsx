@@ -2,15 +2,22 @@
 
 import { useState } from "react";
 
+interface SizeVariant {
+  label: string;
+  printfulVariantId: number;
+  price: number; // öre
+}
+
 interface Product {
   title: string;
   image: string;
   desc: string;
   tag: string;
   soldOut?: boolean;
-  notifyOnly?: boolean; // true = no real Printful ID yet, show "Notify Me" form
+  notifyOnly?: boolean;
   printfulVariantId: number;
   price: number; // öre (SEK × 100)
+  sizes?: SizeVariant[];
 }
 
 const products: Product[] = [
@@ -30,6 +37,11 @@ const products: Product[] = [
     tag: "In Stock",
     printfulVariantId: 5332854195,
     price: 3500,
+    sizes: [
+      { label: '3×3"',     printfulVariantId: 5332854195, price: 3500 },
+      { label: '4×4"',     printfulVariantId: 5332854196, price: 3500 },
+      { label: '5.5×5.5"', printfulVariantId: 5332854197, price: 4100 },
+    ],
   },
   // ── Coming soon ────────────────────────────────────────────────────────────
   {
@@ -66,9 +78,17 @@ interface CartItem {
   quantity: number;
 }
 
+// Initialise selected size to first variant for each product that has sizes
+const defaultSizes: Record<string, SizeVariant> = Object.fromEntries(
+  products
+    .filter((p) => p.sizes?.length)
+    .map((p) => [p.title, p.sizes![0]])
+);
+
 export default function Shop() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, SizeVariant>>(defaultSizes);
 
   // Per-product notify-me state
   const [notifyEmails, setNotifyEmails]   = useState<Record<string, string>>({});
@@ -77,16 +97,22 @@ export default function Shop() {
   const totalItems = cart.reduce((sum, ci) => sum + ci.quantity, 0);
 
   function addToCart(product: Product) {
+    // For size-variants, use the currently selected size
+    const size = product.sizes ? selectedSizes[product.title] : undefined;
+    const effective: Product = size
+      ? { ...product, title: `${product.title} (${size.label})`, printfulVariantId: size.printfulVariantId, price: size.price }
+      : product;
+
     setCart((prev) => {
-      const existing = prev.find((ci) => ci.product.printfulVariantId === product.printfulVariantId);
+      const existing = prev.find((ci) => ci.product.printfulVariantId === effective.printfulVariantId);
       if (existing) {
         return prev.map((ci) =>
-          ci.product.printfulVariantId === product.printfulVariantId
+          ci.product.printfulVariantId === effective.printfulVariantId
             ? { ...ci, quantity: ci.quantity + 1 }
             : ci
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product: effective, quantity: 1 }];
     });
   }
 
@@ -197,13 +223,47 @@ export default function Shop() {
 
                   {/* ── Buy (real Printful ID) ── */}
                   {!item.soldOut && !item.notifyOnly && (
-                    <button
-                      onClick={() => addToCart(item)}
-                      className="group/button relative overflow-hidden border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
-                    >
-                      <span className="relative z-10">Buy</span>
-                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#ff4d4d]/20 to-transparent transition duration-700 group-hover/button:translate-x-full" />
-                    </button>
+                    <div className="space-y-3">
+                      {/* Size picker */}
+                      {item.sizes && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[#e5dccf]/35 shrink-0">
+                            Size
+                          </span>
+                          <div className="flex gap-1.5">
+                            {item.sizes.map((size) => {
+                              const isSelected = selectedSizes[item.title]?.printfulVariantId === size.printfulVariantId;
+                              return (
+                                <button
+                                  key={size.printfulVariantId}
+                                  onClick={() => setSelectedSizes((prev) => ({ ...prev, [item.title]: size }))}
+                                  className={`px-2.5 py-1 font-mono text-[10px] border transition duration-200 ${
+                                    isSelected
+                                      ? "border-[#ff4d4d]/60 bg-[#ff2b2b]/15 text-[#ffb3b3]"
+                                      : "border-white/10 bg-black/40 text-[#e5dccf]/40 hover:border-[#ff4d4d]/30 hover:text-[#e5dccf]/70"
+                                  }`}
+                                >
+                                  {size.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {item.sizes && (
+                            <span className="ml-auto font-mono text-[10px] text-[#ffb3b3]/70">
+                              {((selectedSizes[item.title]?.price ?? item.price) / 100)} kr
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="group/button relative overflow-hidden border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
+                      >
+                        <span className="relative z-10">Buy</span>
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#ff4d4d]/20 to-transparent transition duration-700 group-hover/button:translate-x-full" />
+                      </button>
+                    </div>
                   )}
 
                   {/* ── Notify Me (no real Printful ID yet) ── */}

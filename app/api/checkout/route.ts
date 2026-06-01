@@ -56,11 +56,24 @@ export async function POST(req: NextRequest) {
       },
       quantity: item.quantity,
     })),
-    // Collect shipping address from customer for physical Printful orders
+    // Collect shipping address + show shipping rate for physical Printful orders
     ...(hasPhysicalItems && {
       shipping_address_collection: {
         allowed_countries: ["SE", "NO", "DK", "FI", "DE", "GB"],
       },
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: { amount: 4900, currency: "sek" },
+            display_name: "Standard frakt",
+            delivery_estimate: {
+              minimum: { unit: "business_day", value: 5 },
+              maximum: { unit: "business_day", value: 10 },
+            },
+          },
+        },
+      ],
     }),
     metadata: sessionMetadata,
     success_url: `${process.env.NEXT_PUBLIC_URL}/?booking=success`,
