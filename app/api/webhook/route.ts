@@ -8,6 +8,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: NextRequest) {
+  console.log("[webhook] STRIPE_WEBHOOK_SECRET prefix:", process.env.STRIPE_WEBHOOK_SECRET?.slice(0, 10));
+
   const rawBody = await req.arrayBuffer();
   const body    = Buffer.from(rawBody);
   const sig     = req.headers.get("stripe-signature");
