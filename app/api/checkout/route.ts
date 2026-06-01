@@ -34,25 +34,18 @@ export async function POST(req: NextRequest) {
 
   const baseUrl = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 
-  // Build session metadata: start with any caller-supplied key/values,
-  // then layer on Printful fields when a shipping address is present.
   const sessionMetadata: Record<string, string> = { ...(extraMetadata ?? {}) };
 
-  if (shippingAddress) {
-    const printfulItems = items
-      .filter((i) => i.printfulVariantId)
-      .map((i) => ({ variant_id: i.printfulVariantId, quantity: i.quantity, name: i.name }));
-
-    Object.assign(sessionMetadata, {
-      printfulItems: JSON.stringify(printfulItems),
-      recipientName:     shippingAddress.name,
-      recipientAddress1: shippingAddress.address1,
-      recipientCity:     shippingAddress.city,
-      recipientZip:      shippingAddress.zip,
-      recipientCountry:  shippingAddress.country,
-      recipientEmail:    shippingAddress.email,
-    });
+  // Store Printful item list in metadata for the webhook to pick up.
+  // The shipping address is now collected by Stripe — no need to store it here.
+  const printfulItems = items.filter((i) => i.printfulVariantId);
+  if (printfulItems.length > 0) {
+    sessionMetadata.printfulItems = JSON.stringify(
+      printfulItems.map((i) => ({ variant_id: i.printfulVariantId, quantity: i.quantity, name: i.name }))
+    );
   }
+
+  const hasPhysicalItems = printfulItems.length > 0;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -65,6 +58,12 @@ export async function POST(req: NextRequest) {
       },
       quantity: item.quantity,
     })),
+    // Collect shipping address from customer for physical Printful orders
+    ...(hasPhysicalItems && {
+      shipping_address_collection: {
+        allowed_countries: ["SE", "NO", "DK", "FI", "DE", "GB"],
+      },
+    }),
     metadata: sessionMetadata,
     success_url: `${baseUrl}/?booking=success`,
     cancel_url:  `${baseUrl}/?booking=cancelled`,

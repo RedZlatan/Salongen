@@ -9,15 +9,21 @@ interface PrintfulItem {
 export async function createPrintfulOrder(session: Stripe.Checkout.Session) {
   const items: PrintfulItem[] = JSON.parse(session.metadata?.printfulItems ?? "[]");
 
+  // Prefer the address Stripe collected during checkout (collected_information);
+  // fall back to legacy metadata fields for sessions before this change.
+  const shipping = session.collected_information?.shipping_details;
+  const recipient = {
+    name:         shipping?.name                    ?? session.metadata?.recipientName,
+    address1:     shipping?.address?.line1          ?? session.metadata?.recipientAddress1,
+    address2:     shipping?.address?.line2          ?? undefined,
+    city:         shipping?.address?.city           ?? session.metadata?.recipientCity,
+    zip:          shipping?.address?.postal_code    ?? session.metadata?.recipientZip,
+    country_code: shipping?.address?.country        ?? session.metadata?.recipientCountry,
+    email:        session.customer_details?.email   ?? session.metadata?.recipientEmail,
+  };
+
   const body = {
-    recipient: {
-      name: session.metadata?.recipientName,
-      address1: session.metadata?.recipientAddress1,
-      city: session.metadata?.recipientCity,
-      zip: session.metadata?.recipientZip,
-      country_code: session.metadata?.recipientCountry,
-      email: session.metadata?.recipientEmail,
-    },
+    recipient,
     items: items.map((item) => ({
       sync_variant_id: item.variant_id,
       quantity: item.quantity,

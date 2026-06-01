@@ -66,15 +66,6 @@ interface CartItem {
   quantity: number;
 }
 
-const PLACEHOLDER_ADDRESS = {
-  name: "Customer",
-  address1: "Street 1",
-  city: "Stockholm",
-  zip: "11120",
-  country: "SE",
-  email: "customer@example.com",
-};
-
 export default function Shop() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -125,7 +116,7 @@ export default function Shop() {
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items, shippingAddress: PLACEHOLDER_ADDRESS }),
+      body: JSON.stringify({ items }),
     });
 
     const data = await res.json();
