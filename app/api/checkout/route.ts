@@ -32,8 +32,6 @@ export async function POST(req: NextRequest) {
     metadata?: Record<string, string>;
   } = await req.json();
 
-  const baseUrl = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
-
   const sessionMetadata: Record<string, string> = { ...(extraMetadata ?? {}) };
 
   // Store Printful item list in metadata for the webhook to pick up.
@@ -65,8 +63,8 @@ export async function POST(req: NextRequest) {
       },
     }),
     metadata: sessionMetadata,
-    success_url: `${baseUrl}/?booking=success`,
-    cancel_url:  `${baseUrl}/?booking=cancelled`,
+    success_url: `${process.env.NEXT_PUBLIC_URL}/?booking=success`,
+    cancel_url:  `${process.env.NEXT_PUBLIC_URL}/?booking=cancelled`,
   });
 
   return NextResponse.json({ url: session.url });
