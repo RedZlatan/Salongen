@@ -235,6 +235,13 @@ export default function AromaGame() {
           this.ground
         );
 
+        // Camera follow + mobile zoom
+        const isMobile = window.innerWidth < 768;
+        const zoom = isMobile ? 0.45 : 1;
+        this.cameras.main.setZoom(zoom);
+        this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+        this.cameras.main.setBounds(0, 0, 1600, 900);
+
         // Controls
         this.cursors =
           this.input.keyboard!.createCursorKeys();
@@ -754,9 +761,51 @@ export default function AromaGame() {
     };
   }, []);
 
+  function pressKey(code: string) {
+    window.dispatchEvent(new KeyboardEvent("keydown", { code, bubbles: true, cancelable: true }));
+  }
+  function releaseKey(code: string) {
+    window.dispatchEvent(new KeyboardEvent("keyup", { code, bubbles: true, cancelable: true }));
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black overflow-hidden">
+    <div className="relative flex items-center justify-center min-h-screen bg-black overflow-hidden">
       <div ref={gameRef} />
+
+      {/* Touch controls — mobile only */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 flex items-end justify-between px-4 md:hidden">
+        {/* D-pad: left / right */}
+        <div className="pointer-events-auto flex gap-2">
+          <button
+            onPointerDown={(e) => { e.preventDefault(); pressKey("ArrowLeft"); }}
+            onPointerUp={() => releaseKey("ArrowLeft")}
+            onPointerLeave={() => releaseKey("ArrowLeft")}
+            className="flex h-14 w-14 items-center justify-center border border-white/20 bg-black/60 font-mono text-xl text-white/70 backdrop-blur-sm active:bg-white/10"
+          >←</button>
+          <button
+            onPointerDown={(e) => { e.preventDefault(); pressKey("ArrowRight"); }}
+            onPointerUp={() => releaseKey("ArrowRight")}
+            onPointerLeave={() => releaseKey("ArrowRight")}
+            className="flex h-14 w-14 items-center justify-center border border-white/20 bg-black/60 font-mono text-xl text-white/70 backdrop-blur-sm active:bg-white/10"
+          >→</button>
+        </div>
+
+        {/* Jump + Shoot */}
+        <div className="pointer-events-auto flex gap-3">
+          <button
+            onPointerDown={(e) => { e.preventDefault(); pressKey("ArrowUp"); }}
+            onPointerUp={() => releaseKey("ArrowUp")}
+            onPointerLeave={() => releaseKey("ArrowUp")}
+            className="flex h-14 w-14 items-center justify-center border border-white/20 bg-black/60 font-mono text-xs uppercase tracking-widest text-white/70 backdrop-blur-sm active:bg-white/10"
+          >↑</button>
+          <button
+            onPointerDown={(e) => { e.preventDefault(); pressKey("Space"); }}
+            onPointerUp={() => releaseKey("Space")}
+            onPointerLeave={() => releaseKey("Space")}
+            className="flex h-14 w-16 items-center justify-center border border-[#ff5a5a]/40 bg-black/60 font-mono text-[10px] uppercase tracking-widest text-[#ff9999]/80 backdrop-blur-sm active:bg-[#ff2b2b]/20"
+          >shoot</button>
+        </div>
+      </div>
     </div>
   );
 }

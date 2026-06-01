@@ -273,36 +273,55 @@ export default function ArcadePage() {
             className="absolute right-[12%] top-[22%] z-20 h-[360px] w-[180px] cursor-pointer hidden md:block"
           />
 
-          {/* Mobile: Enter Aroma + Observer buttons */}
-          <div className="absolute bottom-24 left-1/2 z-30 flex -translate-x-1/2 flex-col gap-3 md:hidden">
+          {/* TURN LEFT (desktop) */}
+          <button
+            onClick={() => setScene("lockeleftfromaroma")}
+            className="absolute bottom-10 left-8 z-30 hidden items-center gap-2 border border-white/20 bg-black/40 px-5 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/60 backdrop-blur-sm transition hover:border-[#4aff8c]/30 hover:text-white md:flex"
+          >
+            ← Turn Left
+          </button>
+
+          {/* RETURN (desktop) */}
+          <button
+            onClick={() => setScene("entrance")}
+            className="absolute bottom-10 left-1/2 z-30 -translate-x-1/2 hidden border border-white/20 bg-black/40 px-6 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm transition hover:border-[#ff4d4d]/40 hover:text-white md:block"
+          >
+            Return
+          </button>
+
+          {/* Mobile: full navigation row */}
+          <div className="absolute bottom-6 left-0 right-0 z-30 flex items-end justify-between px-4 md:hidden">
+            {/* Left: Forest */}
+            <button
+              onClick={() => setScene("lockeleftfromaroma")}
+              className="border border-[#4aff8c]/30 bg-black/70 px-4 py-4 font-mono text-xs uppercase tracking-[0.3em] text-[#4aff8c]/70 backdrop-blur-sm"
+            >
+              ← Forest
+            </button>
+
+            {/* Center: Enter Aroma */}
             <button
               onClick={startAroma}
-              className="border border-[#ff4d4d]/40 bg-black/70 px-8 py-5 font-mono text-sm uppercase tracking-[0.35em] text-[#ffb3b3] backdrop-blur-sm"
+              className="border border-[#ff4d4d]/50 bg-black/70 px-6 py-4 font-mono text-sm uppercase tracking-[0.35em] text-[#ffb3b3] backdrop-blur-sm"
             >
-              → Enter Aroma
+              Enter Aroma
             </button>
+
+            {/* Right: Observer */}
             <button
               onClick={() => setScene("observer")}
-              className="border border-white/20 bg-black/60 px-6 py-4 font-mono text-xs uppercase tracking-[0.35em] text-white/60 backdrop-blur-sm"
+              className="border border-white/20 bg-black/70 px-4 py-4 font-mono text-xs uppercase tracking-[0.3em] text-white/60 backdrop-blur-sm"
             >
               Observer →
             </button>
           </div>
 
-          {/* TURN LEFT */}
-          <button
-            onClick={() => setScene("lockeleftfromaroma")}
-            className="absolute bottom-10 left-8 z-30 flex items-center gap-2 border border-white/20 bg-black/40 px-5 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/60 backdrop-blur-sm transition hover:border-[#4aff8c]/30 hover:text-white"
-          >
-            ← Turn Left
-          </button>
-
-          {/* RETURN */}
+          {/* Mobile: Return at very bottom */}
           <button
             onClick={() => setScene("entrance")}
-            className="absolute bottom-10 left-1/2 z-30 -translate-x-1/2 border border-white/20 bg-black/40 px-6 py-3 font-mono text-xs uppercase tracking-[0.35em] text-white/70 backdrop-blur-sm transition hover:border-[#ff4d4d]/40 hover:text-white"
+            className="absolute bottom-[-0px] left-1/2 z-30 -translate-x-1/2 border-t border-white/10 bg-black/80 px-8 py-2 font-mono text-[10px] uppercase tracking-[0.3em] text-white/30 md:hidden"
           >
-            Return
+            ← Back
           </button>
 
         </>
@@ -529,18 +548,10 @@ export default function ArcadePage() {
               autoPlay
               playsInline
               ref={(video) => {
-                if (
-                  video &&
-                  !video.srcObject
-                ) {
+                if (video && !video.srcObject) {
                   navigator.mediaDevices
-                    .getUserMedia({
-                      video: true,
-                    })
-                    .then((stream) => {
-                      video.srcObject =
-                        stream;
-                    });
+                    .getUserMedia({ video: true })
+                    .then((stream) => { video.srcObject = stream; });
                 }
               }}
               className="
@@ -548,14 +559,14 @@ export default function ArcadePage() {
                 left-1/2
                 top-[26%]
                 z-20
-                h-[420px]
-                w-[520px]
                 -translate-x-1/2
                 rounded-[30px]
                 object-cover
                 opacity-90
                 contrast-125
                 grayscale
+                h-[35vw] w-[43vw]
+                md:h-[420px] md:w-[520px]
               "
             />
           )}
