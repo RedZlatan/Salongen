@@ -11,6 +11,7 @@ import BookingModal from "./BookingModal";
 
 export default function HomeContent() {
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [navOpen, setNavOpen]         = useState(false);
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
@@ -48,52 +49,42 @@ export default function HomeContent() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,0,0,0.2),transparent_35%)]" />
 
         {/* NAV */}
-        <nav className="relative z-20 flex flex-wrap items-center justify-between gap-6 border border-white/10 bg-black/50 p-4 backdrop-blur-sm">
-
-          <div>
-
-            <div className="text-[10px] uppercase tracking-[0.45em] text-[#ff4d4d]">
-              Now Showing
+        <nav className="relative z-20 border border-white/10 bg-black/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-4 p-4">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.45em] text-[#ff4d4d]">Now Showing</div>
+              <div className="mt-1 font-mono text-xs text-[#e5dccf]/50">www.salongen.se</div>
             </div>
 
-            <div className="mt-1 font-mono text-xs text-[#e5dccf]/50">
-              www.salongen.se
+            {/* Desktop nav */}
+            <div className="hidden md:flex items-center gap-5 text-xs uppercase tracking-[0.25em] text-[#e5dccf]/70">
+              <button onClick={() => scrollToSection("events")} className="transition hover:text-[#ff5a5a]">Events</button>
+              <button onClick={() => scrollToSection("cinema")} className="transition hover:text-[#ff5a5a]">Cinema</button>
+              <button onClick={() => scrollToSection("shop")} className="transition hover:text-[#ff5a5a]">Shop</button>
+              <button onClick={() => scrollToSection("events")} className="border border-red-800/40 bg-red-950/30 px-3 py-2 text-[#ff7b7b] shadow-[0_0_20px_rgba(255,0,0,0.35)] transition hover:bg-red-900/30">Enter</button>
             </div>
 
+            {/* Hamburger */}
+            <button
+              onClick={() => setNavOpen((o) => !o)}
+              className="md:hidden flex flex-col gap-1.5 p-2"
+              aria-label="Menu"
+            >
+              <span className={`block h-px w-6 bg-[#e5dccf]/70 transition-all duration-300 ${navOpen ? "translate-y-[7px] rotate-45" : ""}`} />
+              <span className={`block h-px w-6 bg-[#e5dccf]/70 transition-all duration-300 ${navOpen ? "opacity-0" : ""}`} />
+              <span className={`block h-px w-6 bg-[#e5dccf]/70 transition-all duration-300 ${navOpen ? "-translate-y-[7px] -rotate-45" : ""}`} />
+            </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-5 text-xs uppercase tracking-[0.25em] text-[#e5dccf]/70 md:text-sm">
-
-            <button
-              onClick={() => scrollToSection("events")}
-              className="transition hover:text-[#ff5a5a]"
-            >
-              Events
-            </button>
-
-            <button
-              onClick={() => scrollToSection("cinema")}
-              className="transition hover:text-[#ff5a5a]"
-            >
-              Cinema
-            </button>
-
-            <button
-              onClick={() => scrollToSection("shop")}
-              className="transition hover:text-[#ff5a5a]"
-            >
-              Shop
-            </button>
-
-            <button
-              onClick={() => scrollToSection("events")}
-              className="border border-red-800/40 bg-red-950/30 px-3 py-2 text-[#ff7b7b] shadow-[0_0_20px_rgba(255,0,0,0.35)] transition duration-300 hover:bg-red-900/30 hover:shadow-[0_0_35px_rgba(255,0,0,0.6)]"
-            >
-              Enter
-            </button>
-
-          </div>
-
+          {/* Mobile nav dropdown */}
+          {navOpen && (
+            <div className="md:hidden border-t border-white/10 px-4 pb-4 flex flex-col gap-4 text-sm uppercase tracking-[0.25em] text-[#e5dccf]/70">
+              <button onClick={() => { scrollToSection("events"); setNavOpen(false); }} className="text-left py-2 transition hover:text-[#ff5a5a]">Events</button>
+              <button onClick={() => { scrollToSection("cinema"); setNavOpen(false); }} className="text-left py-2 transition hover:text-[#ff5a5a]">Cinema</button>
+              <button onClick={() => { scrollToSection("shop");   setNavOpen(false); }} className="text-left py-2 transition hover:text-[#ff5a5a]">Shop</button>
+              <button onClick={() => { scrollToSection("events"); setNavOpen(false); }} className="self-start border border-red-800/40 bg-red-950/30 px-4 py-2 text-[#ff7b7b]">Enter</button>
+            </div>
+          )}
         </nav>
 
         {/* HERO CONTENT */}

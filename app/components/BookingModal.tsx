@@ -167,7 +167,7 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
   const totalAmount = selectedEvent ? selectedEvent.price * selectedSeats.length : 0;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -180,7 +180,7 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className="relative z-10 w-full max-w-2xl border border-white/10 bg-[#080808] shadow-[0_0_80px_rgba(255,0,0,0.15)]"
+        className="relative z-10 w-full sm:max-w-2xl h-[95dvh] sm:h-auto sm:max-h-[90vh] overflow-y-auto border border-white/10 bg-[#080808] shadow-[0_0_80px_rgba(255,0,0,0.15)]"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
@@ -297,7 +297,8 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
                       Loading seats...
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="overflow-x-auto">
+                    <div className="min-w-[220px] space-y-2">
                       {ROWS.map((row) => (
                         <div key={row} className="flex items-center gap-2">
                           <span className="w-5 shrink-0 font-mono text-xs text-[#e5dccf]/30">
@@ -332,6 +333,7 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
                           </div>
                         </div>
                       ))}
+                    </div>
                     </div>
                   )}
 

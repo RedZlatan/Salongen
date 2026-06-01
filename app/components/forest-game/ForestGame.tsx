@@ -411,9 +411,46 @@ export default function ForestGame({ onClose }: Props) {
         )}
 
         {status === "ready" && (
-          <p className="absolute bottom-4 left-1/2 -translate-x-1/2 select-none font-mono text-[10px] uppercase tracking-[0.3em] text-white/25">
-            ← A &nbsp; D → &nbsp;&nbsp; W / S &nbsp;&nbsp; Space ↑
-          </p>
+          <>
+            {/* Keyboard hint — desktop only */}
+            <p className="absolute bottom-4 left-1/2 hidden -translate-x-1/2 select-none font-mono text-[10px] uppercase tracking-[0.3em] text-white/25 sm:block">
+              ← A &nbsp; D → &nbsp;&nbsp; W / S &nbsp;&nbsp; Space ↑
+            </p>
+
+            {/* Touch D-pad — mobile only */}
+            <div className="pointer-events-none absolute bottom-4 left-0 right-0 flex items-end justify-between px-4 sm:hidden">
+              {/* Left cluster: directional */}
+              <div className="pointer-events-auto grid grid-cols-3 gap-1" style={{ gridTemplateAreas: `". up ." "left . right" ". down ."` }}>
+                {([
+                  { code: "ArrowUp",    label: "↑", area: "up" },
+                  { code: "ArrowLeft",  label: "←", area: "left" },
+                  { code: "ArrowRight", label: "→", area: "right" },
+                  { code: "ArrowDown",  label: "↓", area: "down" },
+                ] as const).map(({ code, label, area }) => (
+                  <button
+                    key={code}
+                    style={{ gridArea: area }}
+                    onPointerDown={(e) => { e.preventDefault(); document.dispatchEvent(new KeyboardEvent("keydown", { code, bubbles: true })); }}
+                    onPointerUp={() => document.dispatchEvent(new KeyboardEvent("keyup", { code, bubbles: true }))}
+                    onPointerLeave={() => document.dispatchEvent(new KeyboardEvent("keyup", { code, bubbles: true }))}
+                    className="flex h-12 w-12 items-center justify-center border border-white/20 bg-black/50 font-mono text-lg text-white/70 backdrop-blur-sm active:bg-white/10"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right cluster: jump */}
+              <button
+                onPointerDown={(e) => { e.preventDefault(); document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true })); }}
+                onPointerUp={() => document.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true }))}
+                onPointerLeave={() => document.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true }))}
+                className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#4aff8c]/30 bg-black/50 font-mono text-xs uppercase tracking-widest text-[#4aff8c]/70 backdrop-blur-sm active:bg-[#4aff8c]/10"
+              >
+                ↑
+              </button>
+            </div>
+          </>
         )}
       </div>
 

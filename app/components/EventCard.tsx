@@ -58,17 +58,17 @@ export default function EventCard({
           {description}
         </p>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onViewEvent}
-            className="border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
+            className="min-h-[44px] border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
           >
             View Event
           </button>
 
           <button
             onClick={onBook}
-            className="border border-white/15 bg-white/5 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#e5dccf]/60 transition duration-300 hover:border-[#ff4d4d]/30 hover:text-[#ffb3b3]"
+            className="min-h-[44px] border border-white/15 bg-white/5 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#e5dccf]/60 transition duration-300 hover:border-[#ff4d4d]/30 hover:text-[#ffb3b3]"
           >
             Book Now
           </button>
