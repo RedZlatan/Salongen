@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createPrintfulOrder } from "@/lib/printful";
+import { sendShopReceipt } from "@/lib/mailer";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-05-27.dahlia",
@@ -42,6 +43,22 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("[webhook] Printful order creation failed:", err);
       return NextResponse.json({ error: "Printful order failed" }, { status: 500 });
+    }
+
+    // Send shop receipt email
+    const recipientEmail = session.metadata?.recipientEmail ?? session.customer_details?.email;
+    if (recipientEmail) {
+      const items: Array<{ name: string; quantity: number }> = JSON.parse(
+        session.metadata?.printfulItems ?? "[]"
+      ).map((i: { name: string; quantity: number }) => ({ name: i.name, quantity: i.quantity }));
+
+      sendShopReceipt({
+        name:    session.metadata?.recipientName ?? "Customer",
+        email:   recipientEmail,
+        items,
+        total:   session.amount_total ?? 0,
+        orderId: session.id,
+      }).catch((err) => console.error("[webhook] shop receipt email failed:", err));
     }
   }
 

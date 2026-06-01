@@ -118,6 +118,21 @@ export default function BookingModal({ onClose, preselectedEvent }: BookingModal
 
     setBookingRef(ref);
 
+    // 1b. Send booking confirmation email (fire-and-forget, non-blocking)
+    fetch("/api/email/booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        email,
+        eventTitle:  selectedEvent.title,
+        eventDate:   selectedEvent.date,
+        seats:       selectedSeats.join(", "),
+        bookingRef:  ref,
+        total,
+      }),
+    }).catch((err) => console.error("[email] booking confirmation failed:", err));
+
     // 2. Create Stripe Checkout session
     const res = await fetch("/api/checkout", {
       method:  "POST",
