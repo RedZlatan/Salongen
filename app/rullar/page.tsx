@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, type PanInfo } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Cormorant_Garamond, DM_Mono } from "next/font/google";
 import { stories, type Story } from "./data";
 
@@ -30,6 +30,11 @@ export default function RullarPage() {
   const [index, setIndex] = useState(0);
   const [unlocked, setUnlocked] = useState(false);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
+
+  // Refs för native swipe (touch + mus) — ersätter framer-motion drag.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const mouseStartY = useRef<number | null>(null);
 
   // Läs upplåsning från localStorage (och fånga retur från Stripe).
   useEffect(() => {
@@ -74,14 +79,36 @@ export default function RullarPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [go]);
 
-  const onDragEnd = useCallback(
-    (_: unknown, info: PanInfo) => {
-      const threshold = 80;
-      if (info.offset.y < -threshold || info.velocity.y < -500) go(1); // svep uppåt → nästa
-      else if (info.offset.y > threshold || info.velocity.y > 500) go(-1);
-    },
-    [go]
-  );
+  // Native touch-swipe — fungerar med tummen på mobil. preventDefault kräver
+  // icke-passiva listeners, därför addEventListener i stället för JSX-handlers.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchStartY.current === null) return;
+      e.preventDefault(); // stoppa native scroll under svep
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (touchStartY.current === null) return;
+      const diff = touchStartY.current - e.changedTouches[0].clientY;
+      if (diff > 60) go(1);        // svep > 60px uppåt → nästa kort
+      else if (diff < -60) go(-1); // svep > 60px nedåt → föregående kort
+      touchStartY.current = null;
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [go]);
 
   const handleUnlock = useCallback(async () => {
     setLoadingCheckout(true);
@@ -125,13 +152,21 @@ export default function RullarPage() {
         />
       </div>
 
-      {/* Vertikal pager — svep uppåt för nästa rulle */}
-      <motion.div
+      {/* Vertikal pager — native swipe (touch via listeners, mus via handlers) */}
+      <div
+        ref={containerRef}
         className="h-full w-full"
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.2}
-        onDragEnd={onDragEnd}
+        style={{ touchAction: "none" }}
+        onMouseDown={(e) => {
+          mouseStartY.current = e.clientY;
+        }}
+        onMouseUp={(e) => {
+          if (mouseStartY.current === null) return;
+          const diff = mouseStartY.current - e.clientY;
+          if (diff > 60) go(1);
+          else if (diff < -60) go(-1);
+          mouseStartY.current = null;
+        }}
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
@@ -145,7 +180,7 @@ export default function RullarPage() {
             {current && <CardView story={current} onUnlock={handleUnlock} loading={loadingCheckout} />}
           </motion.div>
         </AnimatePresence>
-      </motion.div>
+      </div>
 
       {/* Svep-hint på första kortet */}
       {index === 0 && (
