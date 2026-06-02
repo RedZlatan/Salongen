@@ -194,3 +194,46 @@ export async function sendShopReceipt(data: ShopReceiptData) {
     html,
   });
 }
+
+// ── sendRullarUnlock ──────────────────────────────────────────────────────────
+
+export interface RullarUnlockData {
+  email: string;
+  link: string; // ${NEXT_PUBLIC_URL}/rullar?token=...
+}
+
+export async function sendRullarUnlock(data: RullarUnlockData) {
+  const html = wrap(`
+    <div class="header">
+      <p class="eyebrow">Den Sista Salongen</p>
+      <h1 class="title">Rullar — upplåst</h1>
+    </div>
+    <div class="body">
+      <p class="value" style="margin-bottom:18px">
+        Tack för ditt köp. Hela rullen — alla 56 micro-noveller — är nu din.
+      </p>
+
+      <p class="label">Lås upp läsningen</p>
+      <div class="ref-box" style="text-align:center">
+        <a href="${data.link}" style="font-size:14px;letter-spacing:0.05em;color:#ff5a5a;word-break:break-all">
+          Öppna Rullar →
+        </a>
+      </div>
+
+      <p style="font-size:12px;color:rgba(229,220,207,0.5);margin:0">
+        Klicka på länken för att låsa upp. Spara mailet — länken fungerar på
+        flera enheter. Vid frågor, svara på detta mail.
+      </p>
+    </div>
+    <div class="footer">
+      <p class="footer-text">support@sistasalongen.com &nbsp;·&nbsp; Göteborg, Sverige</p>
+    </div>
+  `);
+
+  await send({
+    from: FROM,
+    to: data.email,
+    subject: "Rullar — din läsning är upplåst",
+    html,
+  });
+}

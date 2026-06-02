@@ -42,13 +42,44 @@ export default function RullarPage() {
     canScroll: boolean;
   } | null>(null);
 
-  // Läs upplåsning från localStorage (och fånga retur från Stripe).
+  // Läs upplåsning från localStorage, fånga retur från Stripe, och lös in
+  // ev. email-token (?token=) mot Supabase.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Optimistisk upplåsning direkt efter betalning (successPath).
     if (params.get("unlocked") === "1") {
       localStorage.setItem(UNLOCK_KEY, "1");
     }
+
     setUnlocked(localStorage.getItem(UNLOCK_KEY) === "1");
+
+    // Email-token: verifiera, lås upp vid giltig, och städa bort den ur URL:en.
+    const token = params.get("token");
+    if (token) {
+      fetch("/api/rullar/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.valid) {
+            localStorage.setItem(UNLOCK_KEY, "1");
+            setUnlocked(true);
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          params.delete("token");
+          const qs = params.toString();
+          window.history.replaceState(
+            {},
+            "",
+            window.location.pathname + (qs ? `?${qs}` : "")
+          );
+        });
+    }
   }, []);
 
   // Upplåst → allt utom låskortet. Låst → fram t.o.m. låskortet.
