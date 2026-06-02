@@ -22,6 +22,7 @@ const dmMono = DM_Mono({
 
 const UNLOCK_KEY = "rullar_unlocked";
 const UNLOCK_PRICE_ORE = 4900; // 49 kr
+const SWIPE_THRESHOLD = 60; // px innan ett svep räknas som kortbyte
 
 // Index för låskortet — allt efter det är gated.
 const LOCK_INDEX = stories.findIndex((s) => s.type === "lock");
@@ -31,10 +32,15 @@ export default function RullarPage() {
   const [unlocked, setUnlocked] = useState(false);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
 
-  // Refs för native swipe (touch + mus) — ersätter framer-motion drag.
+  // Native swipe (touch + mus). swipeStart fångar gestens startläge så att
+  // scroll-vs-swipe kan avgöras mot kortets scrollposition.
   const containerRef = useRef<HTMLDivElement>(null);
-  const touchStartY = useRef<number | null>(null);
-  const mouseStartY = useRef<number | null>(null);
+  const swipeStart = useRef<{
+    y: number;
+    atTop: boolean;
+    atBottom: boolean;
+    canScroll: boolean;
+  } | null>(null);
 
   // Läs upplåsning från localStorage (och fånga retur från Stripe).
   useEffect(() => {
@@ -79,26 +85,62 @@ export default function RullarPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [go]);
 
-  // Native touch-swipe — fungerar med tummen på mobil. preventDefault kräver
-  // icke-passiva listeners, därför addEventListener i stället för JSX-handlers.
+  // Hitta det aktiva kortets scroll-element (det med overflow-y-auto).
+  const getScroller = useCallback(
+    () => containerRef.current?.querySelector<HTMLElement>("[data-scroll]") ?? null,
+    []
+  );
+
+  // Fånga scrollläget när gesten börjar → avgör scroll vs kortbyte.
+  const beginSwipe = useCallback(
+    (y: number) => {
+      const sc = getScroller();
+      const canScroll = !!sc && sc.scrollHeight > sc.clientHeight + 1;
+      swipeStart.current = {
+        y,
+        canScroll,
+        atTop: !sc || sc.scrollTop <= 0,
+        atBottom: !sc || sc.scrollHeight - sc.scrollTop - sc.clientHeight <= 1,
+      };
+    },
+    [getScroller]
+  );
+
+  // True när gesten ska byta kort (vid kant, eller kort som inte kan scrolla)
+  // — annars låter vi kortet scrolla nativt.
+  const isSwipeGesture = useCallback((y: number) => {
+    const s = swipeStart.current;
+    if (!s) return false;
+    const diff = s.y - y; // > 0 uppåt, < 0 nedåt
+    if (!s.canScroll) return true;
+    if (diff > 0 && s.atBottom) return true; // svep upp vid botten → nästa
+    if (diff < 0 && s.atTop) return true;    // svep ned vid toppen → föregående
+    return false;
+  }, []);
+
+  const endSwipe = useCallback(
+    (y: number) => {
+      const s = swipeStart.current;
+      swipeStart.current = null;
+      if (!s) return;
+      const diff = s.y - y;
+      if (diff > SWIPE_THRESHOLD && (s.atBottom || !s.canScroll)) go(1);
+      else if (diff < -SWIPE_THRESHOLD && (s.atTop || !s.canScroll)) go(-1);
+    },
+    [go]
+  );
+
+  // Touch via icke-passiva listeners (JSX onTouchMove är passiv → preventDefault
+  // ignoreras). preventDefault bara när gesten faktiskt är ett kortbyte.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-    };
+    const onTouchStart = (e: TouchEvent) => beginSwipe(e.touches[0].clientY);
     const onTouchMove = (e: TouchEvent) => {
-      if (touchStartY.current === null) return;
-      e.preventDefault(); // stoppa native scroll under svep
+      if (isSwipeGesture(e.touches[0].clientY)) e.preventDefault();
     };
-    const onTouchEnd = (e: TouchEvent) => {
-      if (touchStartY.current === null) return;
-      const diff = touchStartY.current - e.changedTouches[0].clientY;
-      if (diff > 60) go(1);        // svep > 60px uppåt → nästa kort
-      else if (diff < -60) go(-1); // svep > 60px nedåt → föregående kort
-      touchStartY.current = null;
-    };
+    const onTouchEnd = (e: TouchEvent) => endSwipe(e.changedTouches[0].clientY);
 
     el.addEventListener("touchstart", onTouchStart, { passive: false });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
@@ -108,7 +150,7 @@ export default function RullarPage() {
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
     };
-  }, [go]);
+  }, [beginSwipe, isSwipeGesture, endSwipe]);
 
   const handleUnlock = useCallback(async () => {
     setLoadingCheckout(true);
@@ -156,28 +198,23 @@ export default function RullarPage() {
       <div
         ref={containerRef}
         className="h-full w-full"
-        style={{ touchAction: "none" }}
-        onMouseDown={(e) => {
-          mouseStartY.current = e.clientY;
-        }}
-        onMouseUp={(e) => {
-          if (mouseStartY.current === null) return;
-          const diff = mouseStartY.current - e.clientY;
-          if (diff > 60) go(1);
-          else if (diff < -60) go(-1);
-          mouseStartY.current = null;
-        }}
+        onMouseDown={(e) => beginSwipe(e.clientY)}
+        onMouseUp={(e) => endSwipe(e.clientY)}
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={index}
+            data-scroll
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -28 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="flex h-full w-full items-center justify-center overflow-y-auto px-5 py-10"
+            className="h-full w-full overflow-y-auto px-5 py-10"
+            style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
           >
-            {current && <CardView story={current} onUnlock={handleUnlock} loading={loadingCheckout} />}
+            <div className="flex min-h-full w-full flex-col items-center">
+              {current && <CardView story={current} onUnlock={handleUnlock} loading={loadingCheckout} />}
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>
