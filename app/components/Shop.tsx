@@ -21,9 +21,25 @@ interface Product {
   printfulVariantId: number;
   price: number; // öre (SEK × 100)
   sizes?: SizeVariant[];
+  externalUrl?: string; // öppnas i nytt fönster istället för att läggas i varukorg
 }
 
+// Platsbild tills vi har en riktig produktbild för Rullar.
+const RULLAR_PLACEHOLDER =
+  "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='400'%20height='500'%3E%3Crect%20width='400'%20height='500'%20fill='%230b0b0c'/%3E%3Ctext%20x='200'%20y='240'%20fill='%23f3efe6'%20font-family='Georgia,serif'%20font-size='46'%20letter-spacing='6'%20text-anchor='middle'%3ERULLAR%3C/text%3E%3Ctext%20x='200'%20y='286'%20fill='%23777777'%20font-family='monospace'%20font-size='12'%20letter-spacing='3'%20text-anchor='middle'%3EMICRO-NOVELLER%3C/text%3E%3C/svg%3E";
+
 const products: Product[] = [
+  // ── Digital ────────────────────────────────────────────────────────────────
+  {
+    title: "Rullar",
+    image: RULLAR_PLACEHOLDER,
+    images: [RULLAR_PLACEHOLDER],
+    desc: "56 micro-noveller. Läs tre gratis, lås upp resten för 49 kr.",
+    tag: "Read Now",
+    printfulVariantId: 2001,
+    price: 4900,
+    externalUrl: "/rullar",
+  },
   // ── Available now ──────────────────────────────────────────────────────────
   {
     title: "SALONGEN Cap",
@@ -207,7 +223,11 @@ export default function Shop() {
                 {/* image — click to open detail modal */}
                 <div
                   className="relative aspect-[4/5] cursor-pointer overflow-hidden bg-black"
-                  onClick={() => setDetailProduct(item)}
+                  onClick={() =>
+                    item.externalUrl
+                      ? window.open(item.externalUrl, "_blank")
+                      : setDetailProduct(item)
+                  }
                 >
                   <img
                     src={selectedSizes[item.title]?.image ?? item.image}
@@ -247,8 +267,19 @@ export default function Shop() {
                     </button>
                   )}
 
+                  {/* ── Open external (e.g. Rullar → /rullar) ── */}
+                  {!item.soldOut && !item.notifyOnly && item.externalUrl && (
+                    <button
+                      onClick={() => window.open(item.externalUrl, "_blank")}
+                      className="group/button relative overflow-hidden border border-[#ff4d4d]/30 bg-[#ff2b2b]/10 px-5 py-3 text-xs uppercase tracking-[0.3em] text-[#ffb3b3] transition duration-300 hover:bg-[#ff2b2b]/20 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)]"
+                    >
+                      <span className="relative z-10">Read →</span>
+                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#ff4d4d]/20 to-transparent transition duration-700 group-hover/button:translate-x-full" />
+                    </button>
+                  )}
+
                   {/* ── Buy (real Printful ID) ── */}
-                  {!item.soldOut && !item.notifyOnly && (
+                  {!item.soldOut && !item.notifyOnly && !item.externalUrl && (
                     <div className="space-y-3">
                       {/* Size picker */}
                       {item.sizes && (
