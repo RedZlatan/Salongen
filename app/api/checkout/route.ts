@@ -26,10 +26,12 @@ export async function POST(req: NextRequest) {
     items,
     shippingAddress,
     metadata: extraMetadata,
+    successPath,
   }: {
     items: CartItem[];
     shippingAddress?: ShippingAddress;
     metadata?: Record<string, string>;
+    successPath?: string;
   } = await req.json();
 
   const sessionMetadata: Record<string, string> = { ...(extraMetadata ?? {}) };
@@ -44,6 +46,10 @@ export async function POST(req: NextRequest) {
   }
 
   const hasPhysicalItems = printfulItems.length > 0;
+
+  // Tillåt en intern returväg (måste börja med "/" för att undvika open redirect).
+  const safeSuccessPath =
+    successPath && successPath.startsWith("/") ? successPath : "/?booking=success";
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -76,7 +82,7 @@ export async function POST(req: NextRequest) {
         ],
       }),
       metadata: sessionMetadata,
-      success_url: `${process.env.NEXT_PUBLIC_URL}/?booking=success`,
+      success_url: `${process.env.NEXT_PUBLIC_URL}${safeSuccessPath}`,
       cancel_url:  `${process.env.NEXT_PUBLIC_URL}/?booking=cancelled`,
     });
 
